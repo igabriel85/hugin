@@ -22,13 +22,19 @@ mapping:
   target:
     - [ "B01_10m_GTI", 1 ]
 model:
-  model_builder: model:build_model
+  model_builder: hugin.models.unet.unetv14:unet_v14
   batch_size: 5
   model_path: "/tmp/{model_name}.hdf5"
   loss: categorical_crossentropy
   log: "/tmp/{model_name}.csv"
   train_epochs: 10
   swap_axes: True
+  params:
+    activation_p1: ['relu', 'elu']
+    activation_p2: ['relu', 'elu']
+    drop_p1: [0.1, 0.8]
+    drop_p2: [0.1, 0.8]
+    batch_norm: [True, False]
   optimiser: !!python/object/apply:keras.optimizers.Adam
     kwds:
       lr: !!float 0.0001
