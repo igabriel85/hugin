@@ -332,6 +332,23 @@ def train_keras(model_name,
     log.info("Training completed")
 
 
+def hpo_keras(model_name,
+              window_size,
+              stride_size,
+              model_config,
+              mapping,
+              train_datasets,
+              validation_datasets,
+              pre_callbacks=(),
+              enable_multi_gpu=False,
+              gpus=None,
+              cpu_merge=True,
+              cpu_relocation=False,
+              batch_size=None,
+              random_seed=None,):
+    return 0
+
+
 def train_handler(config, args):
     if args.switch_to_prefix:
         current_dir = os.path.abspath(os.path.dirname(__file__))
