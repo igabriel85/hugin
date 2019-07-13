@@ -17,6 +17,10 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 basedir = os.path.join(os.path.dirname(__file__), "data", "scanner_examples")
 
+
+def runningInCI():
+    return 'CI' in os.environ or 'TRAVIS' in os.environ
+
 @pytest.fixture
 def generated_filesystem_loader():
     width = 2131
@@ -246,6 +250,7 @@ class TestDatasetGenerator(object):
 
 class TestTileGenerator(object):
 
+    @pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
     def test_number_of_tiles(self, generated_filesystem_loader):
         training_loader, validation_loader = generated_filesystem_loader.get_dataset_loader()
         training_loader.loop = True
@@ -291,3 +296,29 @@ class TestTileGenerator(object):
 
         assert len(train_data) == 432
         assert len(validation_data) == 288
+        import time
+        for i in range(len(train_data)):
+            #print (i, time.time())
+            tile =  next(train_data)
+
+
+    def test_number_of_tiles_clasic(self, generated_filesystem_loader):
+        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loader()
+        training_loader.loop = True
+        validation_loader.loop = True
+
+
+        train_data = DataGenerator(training_loader,
+                                   batch_size=None,
+                                   default_window_size=(256, 256),
+                                   input_mapping=[
+                                       ("RGB", 1),
+                                       ("RGB", 2),
+                                       ("RGB", 3)
+                                   ],
+                                   output_mapping={})
+
+
+        assert len(train_data) == 432
+
+
