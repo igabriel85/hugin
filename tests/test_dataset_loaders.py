@@ -298,7 +298,7 @@ class TestTileGenerator(object):
         assert len(validation_data) == 288
         import time
         for i in range(len(train_data)):
-            #print (i, time.time())
+            print (i, time.time())
             tile =  next(train_data)
 
 
