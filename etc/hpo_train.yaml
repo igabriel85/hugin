@@ -36,14 +36,9 @@ model:
     activation_p2: ['relu', 'elu']
     batch_norm: [1, 0]
   optimizers:
-    - adam:
-        lr: [0.01,0.001]
-        beta_1: [0.7, 0.9]
-        beta_2: [0.7, 0.9]
-        epsilon: [0.01, 0.1]
-        decay: [0.01, 0.1]
-        amsgrad: [0, 1]
-    - nadam:
+#    - adam
+#    - nadam
+    Nadam:
         lr: [0.01,0.001]
         beta_1: [0.7, 0.9]
         beta_2: [0.7, 0.9]
