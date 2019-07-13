@@ -20,14 +20,15 @@ import pickle
 import socket
 import time
 from logging import getLogger
-
+import sys
 import os
 import yaml
 from numpy import random
+import importlib
 
 from hyperopt import Trials, STATUS_OK, tpe
 from hyperas import optim
-from hyperas.distributions import uniform
+from hyperas.distributions import uniform, choice
 
 from ..tools.IOUtils import IOUtils
 
@@ -39,6 +40,7 @@ except ImportError:
 import numpy as np
 
 from ..io import DataGenerator, ThreadedDataGenerator, CategoricalConverter
+from ..tools import hpo
 
 log = getLogger(__name__)
 
@@ -378,7 +380,10 @@ def hpo_keras(model_name,
     train_epochs = model_config["train_epochs"]
     prefetch_queue_size = model_config.get("prefetch_queue_size", 10)
     input_channels = len(mapping["inputs"])
-    hpo_type = model_config.get("hpo", "tpe.suggest")
+    hpo_type = model_config.get("hpo", "random")
+    if hpo_type not in ['random', "grid"]: # Check for supported HPO methods
+        log.error("Unsuported HPO type {}".format(hpo_type))
+        sys.exit()
     hpo_mode = model_config.get("hpo_mode", "minimize")
     log.info("Using HPO type: {}".format(hpo_type))
     log.info("HPO Mode: {}".format(hpo_mode))
@@ -501,62 +506,89 @@ def hpo_keras(model_name,
     if IOUtils.file_exists(final_model_location):
         existing_model_location = final_model_location
 
-    if existing_model_location is not None and not load_only_weights:
-        log.info("Loading existing model from: %s", existing_model_location)
-        custom_objects = {}
-        if model_builder_custom_options is not None:
-            custom_objects.update(model_builder_custom_options)
-        if enable_multi_gpu:
-            with tf.device('/cpu:0'):
+    def hpo_model_prep(model_config,
+                       existing_model_location,
+                       load_only_weights,
+                       model_builder_custom_options,
+                       enable_multi_gpu,
+                       window_size,
+                       opt='adam',
+                       opt_param={}):
+        if existing_model_location is not None and not load_only_weights:
+            log.info("Loading existing model from: %s", existing_model_location)
+            custom_objects = {}
+            if model_builder_custom_options is not None:
+                custom_objects.update(model_builder_custom_options)
+            if enable_multi_gpu:
+                with tf.device('/cpu:0'):
+                    model = load_model(existing_model_location, custom_objects=custom_objects)
+            else:
                 model = load_model(existing_model_location, custom_objects=custom_objects)
+            log.info("Model loaded!")
         else:
-            model = load_model(existing_model_location, custom_objects=custom_objects)
-        log.info("Model loaded!")
-    else:
-        log.info("Building model")
-        model_options = model_builder_option
-        model_options['n_channels'] = input_channels
-        input_height, input_width = window_size
-        model_options['input_width'] = model_builder_option.get('input_width', input_width)
-        model_options['input_height'] = model_builder_option.get('input_height', input_height)
-        activation = model_config.get('activation', None)
+            log.info("Building model")
+            model_options = model_builder_option
+            model_options['n_channels'] = input_channels
+            input_height, input_width = window_size
+            model_options['input_width'] = model_builder_option.get('input_width', input_width)
+            model_options['input_height'] = model_builder_option.get('input_height', input_height)
+            activation = model_config.get('activation', None)
 
-        # params = options.get('params')
-        print(model_config)
-        # Add parameters here
-        import sys
-        sys.exit()
-        if activation:
-            model_options["activation"] = activation
-        if enable_multi_gpu:
-            with tf.device('/cpu:0'):
+            if activation:
+                model_options["activation"] = activation
+            if enable_multi_gpu:
+                with tf.device('/cpu:0'):
+                    model = model_builder(**model_options)
+            else:
                 model = model_builder(**model_options)
-        else:
-            model = model_builder(**model_options)
+
         log.info("Model built")
-        if load_only_weights and existing_model_location is not None:
-            log.info("Loading weights from %s", existing_model_location)
-            model.load_weights(existing_model_location)
-            log.info("Finished loading weights")
-    optimiser = model_config.get("optimiser", None)
-    if optimiser is None:
-        log.info("No optimiser specified. Using default Adam")
-        optimiser = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
+        optimiser = model_config.get("optimiser", None)
+        optimizers = model_config.get("optimizers", None)
+        # TODO document: if optimiser and optimizers not set defaults to Adam, else if optimizer is list
+        #  it will treat it as a hyper paremeter, if it is a dictionary,
+        #  the key should be the EXACT name of the keras optimizer and the parameters the keras parameters
+        if optimiser is None and optimizers is None:
+            log.info("No optimiser specified. Using default Adam")
+            optimiser = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
+        else:
+            if isinstance(optimizers, list):
+                optimiser = opt
+                log.info("Optimizer set to {} with default values".format(opt))
+            elif isinstance(optimizers, dict):
+                mod = importlib.import_module("keras.optimizers")
+                for k, v in optimizers.items():
+                    iopt = getattr(mod, k)
+                    optimiser = iopt(**opt_param)
+                    log.info("Optimizer is {} with params {}".format(k, opt_param))
 
-    if enable_multi_gpu:
-        log.info("Using Keras Multi-GPU Training")
-        fit_model = multi_gpu_model(model, gpus=gpus, cpu_merge=cpu_merge, cpu_relocation=cpu_relocation)
-    else:
-        log.info("Using Keras default GPU Training")
-        fit_model = model
-    # ======================
+        if enable_multi_gpu:
+            log.info("Using Keras Multi-GPU Training")
+            fit_model = multi_gpu_model(model, gpus=gpus, cpu_merge=cpu_merge, cpu_relocation=cpu_relocation)
+        else:
+            log.info("Using Keras default GPU Training")
+            fit_model = model
 
+        log.info("Compiling model")
+        fit_model.compile(loss=model_loss, optimizer=optimiser, metrics=model_metrics)
+        log.info("Model compiled")
+        model.summary()
+        return fit_model
 
-    log.info("Compiling model")
-    fit_model.compile(loss=model_loss, optimizer=optimiser, metrics=model_metrics)
-    log.info("Model compiled")
-    model.summary()
+    model_params = model_config.get('params', None)
+    if model_params is None:
+        log.error("No parameters defined in configuration for HPO.")
+        sys.exit()
+    log.info("HPO parameters set to {}".format(model_params))
+    # Add HPO params to model_options
+    # model_options.update(model_params)
 
+    fit_model = hpo_model_prep(model_config, existing_model_location, load_only_weights, model_builder_custom_options, enable_multi_gpu, window_size)
+    sys.exit()
+    if hpo_type == 'random':
+        pass
+    elif hpo_type == 'grid':
+        pass
     fit_model.fit_generator(train_data, steps_per_epoch, **options)
 
     log.info("Saving model to %s", os.path.abspath(final_model_location))
