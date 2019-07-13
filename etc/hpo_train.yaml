@@ -11,7 +11,7 @@ window_size: [ 256, 256 ]
 stride_size: 100
 random_seed: 42
 model_type: keras
-hpo: "tpe.suggest"
+hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
 hpo_mode: "minimize"
 mapping:
   inputs:   
@@ -22,7 +22,7 @@ mapping:
   target:
     - [ "B01_10m_GTI", 1 ]
 model:
-  model_builder: hugin.models.unet.unetv14:unet_v14
+  model_builder: hugin.models.unet.unetv14:unet_v2
   batch_size: 5
   model_path: "/tmp/{model_name}.hdf5"
   loss: categorical_crossentropy
@@ -30,17 +30,32 @@ model:
   train_epochs: 10
   swap_axes: True
   params:
-    activation_p1: ['relu', 'elu']
-    activation_p2: ['relu', 'elu']
     drop_p1: [0.1, 0.8]
     drop_p2: [0.1, 0.8]
-    batch_norm: [True, False]
-  optimiser: !!python/object/apply:keras.optimizers.Adam
-    kwds:
-      lr: !!float 0.0001
-      beta_1: !!float 0.9
-      beta_2: !!float 0.999
-      epsilon: !!float 1e-8
+    activation_p1: ['relu', 'elu']
+    activation_p2: ['relu', 'elu']
+    batch_norm: [1, 0]
+  optimizers:
+    - adam:
+        lr: [0.01,0.001]
+        beta_1: [0.7, 0.9]
+        beta_2: [0.7, 0.9]
+        epsilon: [0.01, 0.1]
+        decay: [0.01, 0.1]
+        amsgrad: [0, 1]
+    - nadam:
+        lr: [0.01,0.001]
+        beta_1: [0.7, 0.9]
+        beta_2: [0.7, 0.9]
+        epsilon: [0.01, 0.1]
+        schedule_decay: [0.01, 0.1]
+
+  #  optimiser: !!python/object/apply:keras.optimizers.Adam
+#    kwds:
+#      lr: !!float 0.0001
+#      beta_1: !!float 0.9
+#      beta_2: !!float 0.999
+#      epsilon: !!float 1e-8
   metrics:
     - accuracy
     - !!python/name:hugin.tools.utils.dice_coef
