@@ -564,7 +564,6 @@ def hpo_keras(model_name,
         start_grid = time.time()
         sample_size = hpo_sample_size
         configurations = create_random_configurations(model_options, sample_size)
-        start_random = time.time()
         best_grid_score = 0
         best_grid_model = None
         best_hyperparameters = None
