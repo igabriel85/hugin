@@ -23,6 +23,7 @@ from logging import getLogger
 import sys
 import os
 import yaml
+import json
 from numpy import random
 import importlib
 
@@ -581,36 +582,26 @@ def hpo_keras(model_name,
             end_grid = time.time() - start_grid
             print("\tScore:", score, "Configuration:", hyperparameters, "Time:", int(end_grid), 'seconds')
         print("\t Best score:", best_grid_score, "Best configuration: ", best_hyperparameters)
-        sys.exit()
+        log.info("Saving model to %s", os.path.abspath(final_model_location))
+        dir_head, dir_tail = os.path.split(final_model_location)
+        if dir_tail and not IOUtils.file_exists(dir_head):
+            log.info("Creating directory: %s", dir_head)
+            IOUtils.recursive_create_dir(dir_head)
+
+        best_grid_model.save(final_model_location)
+        log.info("Saving best configuration")
+        with open('best_params.txt', 'w') as outfile:
+            json.dump(best_hyperparameters, outfile)
+        log.info("Done saving")
+        log.info("Training completed")
+        
     elif hpo_type == 'grid':
         configurations = create_grid_configurations(model_options)
         print(configurations)
         configurations['model_metrics'] = model_metrics
         best_grid_score = 0
         best_grid_model = None
-
-    # fit_model = hpo_model_prep(configurations[0])
-    print(len(configurations))
-    sys.exit()
-    fit_model.fit_generator(train_data, steps_per_epoch, **options)
-
-    log.info("Saving model to %s", os.path.abspath(final_model_location))
-    dir_head, dir_tail = os.path.split(final_model_location)
-    if dir_tail and not IOUtils.file_exists(dir_head):
-        log.info("Creating directory: %s", dir_head)
-        IOUtils.recursive_create_dir(dir_head)
-
-    # model.save(final_model_location)
-
-    log.info("Done saving")
-    log.info("Training completed")
-    # best_run, best_model = optim.minimize(model=model,
-    #                                       data=data,
-    #                                       algo=tpe.suggest,
-    #                                       max_evals=5,
-    #                                     trials=Trials())
-    return 0
-
+        sys.exit()
 
 def train_handler(config, args):
     if args.switch_to_prefix:
