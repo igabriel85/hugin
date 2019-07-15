@@ -7,12 +7,11 @@ data_source: !!python/object/apply:hugin.io.FileSystemLoader
     input_source: /Users/Gabriel/Downloads/ML4EO_Paduri/data
     validation_percent: 0.20
 dataset_cache: /Users/Gabriel/Downloads/ML4EO_Paduri/data/cache_hpo.yaml
+max_number_images: 4
 window_size: [ 256, 256 ]
 stride_size: 100
 random_seed: 42
 model_type: keras
-hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
-hpo_mode: "minimize"
 mapping:
   inputs:   
     - [ "B02_10m", 1 ]
@@ -22,6 +21,8 @@ mapping:
   target:
     - [ "B01_10m_GTI", 1 ]
 model:
+  hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
+  hpo_mode: "minimize"
   model_builder: hugin.models.unet.unetv14:unet_v2
   batch_size: 5
   model_path: "/tmp/{model_name}.hdf5"
@@ -35,25 +36,25 @@ model:
     activation_p1: ['relu', 'elu']
     activation_p2: ['relu', 'elu']
     batch_norm: [1, 0]
-  optimizers:
+#  optimizers:
 #    - adam
 #    - nadam
-    Nadam:
-        lr: [0.01,0.001]
-        beta_1: [0.7, 0.9]
-        beta_2: [0.7, 0.9]
-        epsilon: [0.01, 0.1]
-        schedule_decay: [0.01, 0.1]
+#    Nadam:
+#        lr: [0.01,0.001]
+#        beta_1: [0.7, 0.9]
+#        beta_2: [0.7, 0.9]
+#        epsilon: [0.01, 0.1]
+#        schedule_decay: [0.01, 0.1]
 
-  #  optimiser: !!python/object/apply:keras.optimizers.Adam
-#    kwds:
-#      lr: !!float 0.0001
-#      beta_1: !!float 0.9
-#      beta_2: !!float 0.999
-#      epsilon: !!float 1e-8
+  optimiser: !!python/object/apply:keras.optimizers.Adam
+    kwds:
+      lr: !!float 0.0001
+      beta_1: !!float 0.9
+      beta_2: !!float 0.999
+      epsilon: !!float 1e-8
   metrics:
     - accuracy
-    - !!python/name:hugin.tools.utils.dice_coef
+#    - !!python/name:hugin.tools.utils.dice_coef
   format_converter: !!python/object/apply:hugin.io.CategoricalConverter
     kwds:
       num_classes: 2
