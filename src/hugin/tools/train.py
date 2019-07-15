@@ -41,6 +41,7 @@ import numpy as np
 
 from ..io import DataGenerator, ThreadedDataGenerator, CategoricalConverter
 from ..tools import hpo
+from ..tools.hpo import create_grid_configurations, create_random_configurations, SearchWrapper
 
 log = getLogger(__name__)
 
@@ -346,10 +347,6 @@ def hpo_keras(model_name,
               train_datasets,
               validation_datasets,
               pre_callbacks=(),
-              enable_multi_gpu=False,
-              gpus=None,
-              cpu_merge=True,
-              cpu_relocation=False,
               batch_size=None,
               random_seed=None,):
     log.info("Starting keras training")
@@ -421,7 +418,6 @@ def hpo_keras(model_name,
     log.info("validation_steps_per_epoch: %d", validation_steps_per_epoch)
     log.info("steps_per_epoch: %d", steps_per_epoch)
 
-    load_only_weights = model_config.get("load_only_weights", False)
     checkpoint = model_config.get("checkpoint", None)
 
     callbacks = []
@@ -502,52 +498,24 @@ def hpo_keras(model_name,
                                              user=getpass.getuser())
     log.info("Model path is %s", final_model_location)
 
-    existing_model_location = None
-    if IOUtils.file_exists(final_model_location):
-        existing_model_location = final_model_location
 
-    def hpo_model_prep(model_config,
-                       existing_model_location,
-                       load_only_weights,
-                       model_builder_custom_options,
-                       enable_multi_gpu,
-                       window_size,
+    def hpo_model_prep(configuration,
                        opt='adam',
                        opt_param={}):
-        if existing_model_location is not None and not load_only_weights:
-            log.info("Loading existing model from: %s", existing_model_location)
-            custom_objects = {}
-            if model_builder_custom_options is not None:
-                custom_objects.update(model_builder_custom_options)
-            if enable_multi_gpu:
-                with tf.device('/cpu:0'):
-                    model = load_model(existing_model_location, custom_objects=custom_objects)
-            else:
-                model = load_model(existing_model_location, custom_objects=custom_objects)
-            log.info("Model loaded!")
-        else:
-            log.info("Building model")
-            model_options = model_builder_option
-            model_options['n_channels'] = input_channels
-            input_height, input_width = window_size
-            model_options['input_width'] = model_builder_option.get('input_width', input_width)
-            model_options['input_height'] = model_builder_option.get('input_height', input_height)
-            activation = model_config.get('activation', None)
+        log.info("Building model")
 
-            if activation:
-                model_options["activation"] = activation
-            if enable_multi_gpu:
-                with tf.device('/cpu:0'):
-                    model = model_builder(**model_options)
-            else:
-                model = model_builder(**model_options)
+        loss = configuration.pop('model_loss')
+        metrics = configuration.pop('model_metrics')
+        optimiser = configuration.pop('optimiser')
+        optimizers = configuration.pop('optimizers')
+        model = model_builder(**configuration)
 
         log.info("Model built")
-        optimiser = model_config.get("optimiser", None)
-        optimizers = model_config.get("optimizers", None)
+
         # TODO document: if optimiser and optimizers not set defaults to Adam, else if optimizer is list
         #  it will treat it as a hyper paremeter, if it is a dictionary,
         #  the key should be the EXACT name of the keras optimizer and the parameters the keras parameters
+        #TODO working only with user defined optimizer
         if optimiser is None and optimizers is None:
             log.info("No optimiser specified. Using default Adam")
             optimiser = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
@@ -562,33 +530,64 @@ def hpo_keras(model_name,
                     optimiser = iopt(**opt_param)
                     log.info("Optimizer is {} with params {}".format(k, opt_param))
 
-        if enable_multi_gpu:
-            log.info("Using Keras Multi-GPU Training")
-            fit_model = multi_gpu_model(model, gpus=gpus, cpu_merge=cpu_merge, cpu_relocation=cpu_relocation)
-        else:
-            log.info("Using Keras default GPU Training")
-            fit_model = model
-
         log.info("Compiling model")
-        fit_model.compile(loss=model_loss, optimizer=optimiser, metrics=model_metrics)
+        model.compile(loss=loss, optimizer=optimiser, metrics=metrics)
         log.info("Model compiled")
         model.summary()
-        return fit_model
+        return model
 
+    model_options = model_builder_option
+    model_options['n_channels'] = [input_channels]
+    input_height, input_width = window_size
+    model_options['input_width'] = [model_builder_option.get('input_width', input_width)]
+    model_options['input_height'] = [model_builder_option.get('input_height', input_height)]
+    model_options['model_loss'] = [model_loss]
+    # model_options['model_metrics'] = model_metrics
+    model_options['optimiser'] = [model_config.get("optimiser", None)]
+    model_options['optimizers'] = model_config.get("optimizers", None)
+    if model_options['optimizers'] is None:
+        model_options['optimizers'] = [None]
     model_params = model_config.get('params', None)
     if model_params is None:
         log.error("No parameters defined in configuration for HPO.")
         sys.exit()
+
     log.info("HPO parameters set to {}".format(model_params))
     # Add HPO params to model_options
-    # model_options.update(model_params)
-
-    fit_model = hpo_model_prep(model_config, existing_model_location, load_only_weights, model_builder_custom_options, enable_multi_gpu, window_size)
-    sys.exit()
+    model_options.update(model_params)
+    print(model_options)
     if hpo_type == 'random':
-        pass
+        start_grid = time.time()
+        sample_size = 2
+        configurations = create_random_configurations(model_options, sample_size)
+        start_random = time.time()
+        best_grid_score = 0
+        best_grid_model = None
+        for hyperparameters in configurations:
+            hyperparameters['model_metrics'] = model_metrics
+            print(model_metrics)
+            # model = SearchWrapper(hpo_model_prep, hyperparameters)
+            model = hpo_model_prep(hyperparameters)
+            model.fit_generator(train_data, steps_per_epoch, **options)
+            # score = model.evaluate(X_test, y_test, verbose=0)[-1]
+            score = model.evaluate_generator(validation_data, validation_steps_per_epoch,  max_queue_size=1, workers=1)[-1]
+
+            if score > best_grid_score:  # Keep best model
+                best_grid_score = score
+                best_grid_model = model
+            end_grid = time.time() - start_grid
+            print("\tScore:", score, "Configuration:", hyperparameters, "Time:", int(end_grid), 'seconds')
+        sys.exit()
     elif hpo_type == 'grid':
-        pass
+        configurations = create_grid_configurations(model_options)
+        print(configurations)
+        configurations['model_metrics'] = model_metrics
+        best_grid_score = 0
+        best_grid_model = None
+
+    # fit_model = hpo_model_prep(configurations[0])
+    print(len(configurations))
+    sys.exit()
     fit_model.fit_generator(train_data, steps_per_epoch, **options)
 
     log.info("Saving model to %s", os.path.abspath(final_model_location))
@@ -597,7 +596,7 @@ def hpo_keras(model_name,
         log.info("Creating directory: %s", dir_head)
         IOUtils.recursive_create_dir(dir_head)
 
-    model.save(final_model_location)
+    # model.save(final_model_location)
 
     log.info("Done saving")
     log.info("Training completed")
