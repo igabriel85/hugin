@@ -383,6 +383,9 @@ def hpo_keras(model_name,
         log.error("Unsuported HPO type {}".format(hpo_type))
         sys.exit()
     hpo_mode = model_config.get("hpo_mode", "minimize")
+    hpo_sample_size = model_config.get("hpo_sample_size", 5)
+    log.info("HPO Sample size: {}".format(hpo_sample_size))
+
     log.info("Using HPO type: {}".format(hpo_type))
     log.info("HPO Mode: {}".format(hpo_mode))
     train_data = DataGenerator(train_datasets,
@@ -559,7 +562,7 @@ def hpo_keras(model_name,
     print(model_options)
     if hpo_type == 'random':
         start_grid = time.time()
-        sample_size = 2
+        sample_size = hpo_sample_size
         configurations = create_random_configurations(model_options, sample_size)
         start_random = time.time()
         best_grid_score = 0
@@ -594,7 +597,7 @@ def hpo_keras(model_name,
             json.dump(best_hyperparameters, outfile)
         log.info("Done saving")
         log.info("Training completed")
-        
+
     elif hpo_type == 'grid':
         configurations = create_grid_configurations(model_options)
         print(configurations)
