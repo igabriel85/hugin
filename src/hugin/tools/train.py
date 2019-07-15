@@ -568,9 +568,9 @@ def hpo_keras(model_name,
             print(model_metrics)
             # model = SearchWrapper(hpo_model_prep, hyperparameters)
             model = hpo_model_prep(hyperparameters)
-            model.fit_generator(train_data, steps_per_epoch, **options)
+            score = model.fit_generator(train_data, steps_per_epoch, **options)[-1]
             # score = model.evaluate(X_test, y_test, verbose=0)[-1]
-            score = model.evaluate_generator(validation_data, validation_steps_per_epoch,  max_queue_size=1, workers=1)[-1]
+            # score = model.evaluate_generator(validation_data, validation_steps_per_epoch,  max_queue_size=1, workers=1)[-1]
 
             if score > best_grid_score:  # Keep best model
                 best_grid_score = score
