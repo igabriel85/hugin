@@ -714,10 +714,6 @@ def train_handler(config, args):
             hpo_keras(model_name, window_size, stride_size, model_config, mapping, train_datasets,
                         validation_datasets,
                         pre_callbacks=pre_callbacks,
-                        enable_multi_gpu=args.keras_multi_gpu,
-                        gpus=args.keras_gpus,
-                        cpu_merge=args.keras_disable_cpu_merge,
-                        cpu_relocation=args.keras_enable_cpu_relocation,
                         batch_size=args.keras_batch_size,
                         random_seed=random_seed,
                         )
