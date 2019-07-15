@@ -563,6 +563,7 @@ def hpo_keras(model_name,
         start_random = time.time()
         best_grid_score = 0
         best_grid_model = None
+        best_hyperparameters = None
         for hyperparameters in configurations:
             hyperparameters['model_metrics'] = model_metrics
             # print(model_metrics)
@@ -576,8 +577,10 @@ def hpo_keras(model_name,
             if score > best_grid_score:  # Keep best model
                 best_grid_score = score
                 best_grid_model = model
+                best_hyperparameters = hyperparameters
             end_grid = time.time() - start_grid
             print("\tScore:", score, "Configuration:", hyperparameters, "Time:", int(end_grid), 'seconds')
+        print("\t Best score:", best_grid_score, "Best configuration: ", best_hyperparameters)
         sys.exit()
     elif hpo_type == 'grid':
         configurations = create_grid_configurations(model_options)
