@@ -503,9 +503,7 @@ def hpo_keras(model_name,
     log.info("Model path is %s", final_model_location)
 
 
-    def hpo_model_prep(configuration,
-                       opt='adam',
-                       opt_param={}):
+    def hpo_model_prep(configuration):
         log.info("Building model")
 
         loss = configuration.pop('model_loss')
@@ -519,20 +517,22 @@ def hpo_keras(model_name,
         # TODO document: if optimiser and optimizers not set defaults to Adam, else if optimizer is list
         #  it will treat it as a hyper paremeter, if it is a dictionary,
         #  the key should be the EXACT name of the keras optimizer and the parameters the keras parameters
-        #TODO working only with user defined optimizer
+        #  User defined optimizer has precedence although it's parameters are not optimized
         if optimiser is None and optimizers is None:
             log.info("No optimiser specified. Using default Adam")
             optimiser = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
         else:
-            if isinstance(optimizers, list):
-                optimiser = opt
-                log.info("Optimizer set to {} with default values".format(opt))
+            if isinstance(optimizers, str):
+                optimiser = optimizers
+                log.info("Optimizer set to {} with default values".format(optimizers))
             elif isinstance(optimizers, dict):
                 mod = importlib.import_module("keras.optimizers")
-                for k, v in optimizers.items():
-                    iopt = getattr(mod, k)
-                    optimiser = iopt(**opt_param)
-                    log.info("Optimizer is {} with params {}".format(k, opt_param))
+                kopt = list(optimizers.keys())[0] # TODO fix ugly hack
+                vopt = list(optimizers.values())[0]
+                iopt = getattr(mod, kopt)
+                optimiser = iopt(**vopt)
+                print(type(optimiser))
+                log.info("Optimizer is {} with params {}".format(kopt, vopt))
 
         log.info("Compiling model")
         model.compile(loss=loss, optimizer=optimiser, metrics=metrics)
@@ -540,6 +540,8 @@ def hpo_keras(model_name,
         model.summary()
         return model
 
+    optimizer_name = 0
+    optimizer_params = {}
     model_options = model_builder_option
     model_options['n_channels'] = [input_channels]
     input_height, input_width = window_size
@@ -549,8 +551,24 @@ def hpo_keras(model_name,
     # model_options['model_metrics'] = model_metrics
     model_options['optimiser'] = [model_config.get("optimiser", None)]
     model_options['optimizers'] = model_config.get("optimizers", None)
+
     if model_options['optimizers'] is None:
         model_options['optimizers'] = [None]
+    elif model_options['optimiser'][0] is not None:
+        print(model_options['optimiser'])
+        log.warning("User defined model optimizer detected, ignoring HPO optimizers")
+        model_options['optimizers'] = [None]
+    else:
+        if isinstance(model_options['optimizers'], list):
+            log.info("Optimizer list defined as {}".format(model_options['optimizers']))
+        if isinstance(model_options['optimizers'], dict):
+            log.info("Optimizer dict defined as {}".format(model_options['optimizers']))
+            optimizer_name = list(model_options['optimizers'].keys())[0] # TODO fix ugly hack
+            optimizer_params = list(model_options['optimizers'].values())[0]
+            model_options.pop('optimizers')
+            model_options.update(optimizer_params)
+
+        # sys.exit()
     model_params = model_config.get('params', None)
     if model_params is None:
         log.error("No parameters defined in configuration for HPO.")
@@ -571,8 +589,11 @@ def hpo_keras(model_name,
         runs = []
         for hyperparameters in configurations:
             hyperparameters['model_metrics'] = model_metrics
-            # print(model_metrics)
-            # model = SearchWrapper(hpo_model_prep, hyperparameters)
+            if optimizer_name:  # TODO better fix
+                hpo_opt_param = {optimizer_name: {}}
+                for k, v in optimizer_params.items():
+                    hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
+                hyperparameters['optimizers'] = hpo_opt_param
             model = hpo_model_prep(hyperparameters)
             history = model.fit_generator(train_data, steps_per_epoch, **options)
             # TODO score base on external datasource, to use eval
@@ -617,8 +638,11 @@ def hpo_keras(model_name,
         runs = []
         for hyperparameters in configurations:
             hyperparameters['model_metrics'] = model_metrics
-            # print(model_metrics)
-            # model = SearchWrapper(hpo_model_prep, hyperparameters)
+            if optimizer_name:
+                hpo_opt_param = {optimizer_name: {}}
+                for k, v in optimizer_params.items():
+                    hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
+                hyperparameters['optimizers'] = hpo_opt_param
             model = hpo_model_prep(hyperparameters)
             history = model.fit_generator(train_data, steps_per_epoch, **options)
             # TODO score base on external datasource, to use eval
