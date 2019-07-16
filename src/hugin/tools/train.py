@@ -567,12 +567,15 @@ def hpo_keras(model_name,
         best_grid_score = 0
         best_grid_model = None
         best_hyperparameters = None
+        experiment_run = {}
+        runs = []
         for hyperparameters in configurations:
             hyperparameters['model_metrics'] = model_metrics
             # print(model_metrics)
             # model = SearchWrapper(hpo_model_prep, hyperparameters)
             model = hpo_model_prep(hyperparameters)
             history = model.fit_generator(train_data, steps_per_epoch, **options)
+            # TODO score base on external datasource, to use eval
             score = max(history.history['val_acc'])
             # score = model.evaluate(X_test, y_test, verbose=0)[-1]
             # score = model.evaluate_generator(validation_data, validation_steps_per_epoch,  max_queue_size=1, workers=1)[-1]
@@ -582,7 +585,11 @@ def hpo_keras(model_name,
                 best_grid_model = model
                 best_hyperparameters = hyperparameters
             end_grid = time.time() - start_grid
+            overview = history.history
+            overview['time'] = end_grid
+            runs.append(history.history)
             print("\tScore:", score, "Configuration:", hyperparameters, "Time:", int(end_grid), 'seconds')
+        experiment_run['hpo'] = runs
         print("\t Best score:", best_grid_score, "Best configuration: ", best_hyperparameters)
         log.info("Saving model to %s", os.path.abspath(final_model_location))
         dir_head, dir_tail = os.path.split(final_model_location)
@@ -592,17 +599,59 @@ def hpo_keras(model_name,
 
         best_grid_model.save(final_model_location)
         log.info("Saving best configuration")
-        with open('best_params.txt', 'w') as outfile:
+        with open('hpo_random.json', 'w') as outfile:
             json.dump(best_hyperparameters, outfile)
+        log.info("Saving HPO Histories")
+        with open('best_params_random.json', 'w') as outfile:
+            json.dump(experiment_run, outfile)
         log.info("Done saving")
         log.info("Training completed")
 
     elif hpo_type == 'grid':
         configurations = create_grid_configurations(model_options)
-        print(configurations)
-        configurations['model_metrics'] = model_metrics
+        start_grid = time.time()
         best_grid_score = 0
         best_grid_model = None
+        best_hyperparameters = None
+        experiment_run = {}
+        runs = []
+        for hyperparameters in configurations:
+            hyperparameters['model_metrics'] = model_metrics
+            # print(model_metrics)
+            # model = SearchWrapper(hpo_model_prep, hyperparameters)
+            model = hpo_model_prep(hyperparameters)
+            history = model.fit_generator(train_data, steps_per_epoch, **options)
+            # TODO score base on external datasource, to use eval
+            score = max(history.history['val_acc'])
+            # score = model.evaluate(X_test, y_test, verbose=0)[-1]
+            # score = model.evaluate_generator(validation_data, validation_steps_per_epoch,  max_queue_size=1, workers=1)[-1]
+
+            if score > best_grid_score:  # Keep best model
+                best_grid_score = score
+                best_grid_model = model
+                best_hyperparameters = hyperparameters
+            end_grid = time.time() - start_grid
+            overview = history.history
+            overview['time'] = end_grid
+            runs.append(history.history)
+            print("\tScore:", score, "Configuration:", hyperparameters, "Time:", int(end_grid), 'seconds')
+        experiment_run['hpo'] = runs
+        print("\t Best score:", best_grid_score, "Best configuration: ", best_hyperparameters)
+        log.info("Saving model to %s", os.path.abspath(final_model_location))
+        dir_head, dir_tail = os.path.split(final_model_location)
+        if dir_tail and not IOUtils.file_exists(dir_head):
+            log.info("Creating directory: %s", dir_head)
+            IOUtils.recursive_create_dir(dir_head)
+
+        best_grid_model.save(final_model_location)
+        log.info("Saving best configuration")
+        with open('best_params_grid.json', 'w') as outfile:
+            json.dump(best_hyperparameters, outfile)
+        log.info("Saving HPO Histories")
+        with open('hpo_grid.json', 'w') as outfile:
+            json.dump(experiment_run, outfile)
+        log.info("Done saving")
+        log.info("Training completed")
         sys.exit()
 
 def train_handler(config, args):
