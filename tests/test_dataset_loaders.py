@@ -79,7 +79,6 @@ def generated_filesystem_loader():
             driver='GTiff',
             dtype=data.dtype,
             transform=transform,
-            compress='lzw',
             crs={'init': 'epsg:3857'},
         )
         gti_image = rasterio.open(
@@ -91,7 +90,8 @@ def generated_filesystem_loader():
             driver='GTiff',
             dtype=data_mask.dtype,
             transform=transform,
-            compress='lzw',
+            compress='none',
+            tiled=True,
             crs={'init': 'epsg:3857'},
         )
         for i in range(0, data.shape[-1]):
@@ -250,7 +250,7 @@ class TestDatasetGenerator(object):
 
 class TestTileGenerator(object):
 
-    @pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
+    #@pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
     def test_number_of_tiles(self, generated_filesystem_loader):
         training_loader, validation_loader = generated_filesystem_loader.get_dataset_loader()
         training_loader.loop = True
