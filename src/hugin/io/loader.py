@@ -449,7 +449,9 @@ class DataGenerator(object):
     def _flaten_simple_input(self, inp):
         if len(inp.keys()) != 1:
             return inp
-        return list(inp.values())[0]
+        main_key = list(inp.keys())[0]
+        main_value = inp[main_key]
+        return main_value
 
     def _output_generator(self):
         dataset_loader = self._datasets
@@ -487,7 +489,10 @@ class DataGenerator(object):
                     output_data[out_patch_name].append(self._format_converter(out_patch_value))
 
                 if count == self._batch_size:
-                    in_arrays = {k: np.array(v) for k, v in input_data.items()}
+                    #in_arrays = {k: np.array(v) for k, v in input_data.items()}
+                    in_arrays = {}
+                    for k, v in input_data.items():
+                        in_arrays[k] = np.array(v, copy=False)
                     out_arrays = {k: np.array(v) for k, v in output_data.items()}
                     in_arrays = self._flaten_simple_input(in_arrays)
                     out_arrays = self._flaten_simple_input(out_arrays)
