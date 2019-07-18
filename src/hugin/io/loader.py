@@ -95,7 +95,7 @@ def adapt_shape_and_stride(scene, base_scene, shape, stride):
     return computed_shape, computed_stride
 
 class TileGenerator(object):
-    def __init__(self, scene, shape=None, mapping=(), stride=None, swap_axes=False, normalize=False):
+    def __init__(self, scene, shape=None, mapping=(), stride=None, swap_axes=False, normalize=False, copy=False):
         """
         @shape: specify the shape of the window/tile. None means the window covers the whole image
         @stride: the stride used for moving the windows
@@ -108,6 +108,7 @@ class TileGenerator(object):
         self.swap_axes = swap_axes
         self._normalize = normalize
         self._count = 0
+        self._copy = copy
         if self._stride is None and self._shape is not None:
             self._stride = self._shape[0]
 
@@ -176,6 +177,7 @@ class TileGenerator(object):
         ytile = 0
 
         data = []
+        buffer = None
         while ytile < ytiles:
             y_start = ytile * stride
             y_end = y_start + window_height
@@ -193,7 +195,9 @@ class TileGenerator(object):
                 xtile += 1
 
                 window = Window(x_start, y_start, window_width, window_height)
+                count = 0
                 for map_entry in augmented_mapping:
+                    count += 1
                     backing_store = map_entry["backing_store"]
                     channel = map_entry["channel"]
                     normalization_value = map_entry.get("normalize", None)
@@ -201,18 +205,24 @@ class TileGenerator(object):
                     preprocessing_callbacks = map_entry.get("preprocessing", [])
 
                     band = self.read_window(backing_store, channel, window)
-                    if normalization_value is not None:
+                    if normalization_value is not None and normalization_value != 1:
                         band = band / normalization_value
                     if transform_expression is not None:
                         raise NotImplementedError("Snuggs expressions are currently not implemented")
                     for callback in preprocessing_callbacks:
                         band = callback(band)
-                    data.append(band)
-                img_data = np.array(data)
+
+                    if buffer is None:
+                        buffer = np.zeros((len(augmented_mapping),) + band.shape, dtype=band.dtype)
+                    if buffer.dtype != band.dtype:
+                        buffer = buffer.astype(np.find_common_type([buffer.dtype, band.dtype], []))
+                    buffer[count - 1] = band
+
+                img_data = buffer if not self._copy else buffer.copy()
+                count = 0
 
                 if self.swap_axes:
                     img_data = np.swapaxes(np.swapaxes(img_data, 0, 1), 1, 2)
-                data.clear()
                 yield img_data
 
     def generate_tiles_for_dataset(self):
@@ -316,8 +326,11 @@ class DataGenerator(object):
                  postprocessing_callbacks=[],
                  optimise_huge_datasets=True,
                  default_window_size=None,
-                 default_stride_size=None):
+                 default_stride_size=None,
+                 copy=False):
 
+
+        self._copy = copy
 
         if type(input_mapping) is list or type(input_mapping) is tuple:
             input_mapping = self._convert_input_mapping(input_mapping)
@@ -462,6 +475,7 @@ class DataGenerator(object):
 
         scene_count = 0
         callbacks = self._postprocessing_callbacks
+
         for scene in dataset_loader:
             scene_count += 1
             scene_id, scene_data = scene
@@ -473,6 +487,7 @@ class DataGenerator(object):
 
             for entry in tile_generator:
                 count += 1
+
                 input_patches, output_patches = entry
 
                 for callback in callbacks:
@@ -480,40 +495,39 @@ class DataGenerator(object):
 
                 for in_patch_name, in_patch_value in input_patches.items():
                     if in_patch_name not in input_data:
-                        input_data[in_patch_name] = []
-                    input_data[in_patch_name].append(in_patch_value)
+                        input_data[in_patch_name] = np.zeros((self._batch_size,) + in_patch_value.shape, dtype=in_patch_value.dtype)
+                    input_data[in_patch_name][count - 1] = in_patch_value
 
                 for out_patch_name, out_patch_value in output_patches.items():
                     if out_patch_name not in output_data:
-                        output_data[out_patch_name] = []
-                    output_data[out_patch_name].append(self._format_converter(out_patch_value))
+                        output_data[out_patch_name] = np.zeros((self._batch_size, ) + out_patch_value.shape, dtype=out_patch_value.dtype)
+                    output_data[out_patch_name][count - 1] = out_patch_value
 
                 if count == self._batch_size:
-                    #in_arrays = {k: np.array(v) for k, v in input_data.items()}
                     in_arrays = {}
                     for k, v in input_data.items():
-                        in_arrays[k] = np.array(v, copy=False)
-                    out_arrays = {k: np.array(v) for k, v in output_data.items()}
+                        in_arrays[k] = v if not self._copy else v.copy()
+                    out_arrays = {}
+                    for k,v in output_data.items():
+                        out_arrays[k] = v if not self._copy else v.copy()
                     in_arrays = self._flaten_simple_input(in_arrays)
                     out_arrays = self._flaten_simple_input(out_arrays)
 
                     yield (in_arrays, out_arrays)
                     count = 0
-                    for v in input_data.values():
-                        v.clear()
-                    for v in output_data.values():
-                        v.clear()
+
         if count > 0:
-            in_arrays = {k: np.array(v) for k, v in input_data.items()}
-            out_arrays = {k: np.array(v) for k, v in output_data.items()}
+            for k, v in input_data.items():
+                subset = v[:count,:,:]
+                in_arrays[k] = subset if not self._copy else subset.copy()
+            for k, v in output_data.items():
+                subset = v[:count, :, :]
+                out_arrays[k] = subset if not self._copy else subset.copy()
             in_arrays = self._flaten_simple_input(in_arrays)
             out_arrays = self._flaten_simple_input(out_arrays)
 
             yield (in_arrays, out_arrays)
-            for v in output_data.values():
-                v.clear()
-            for v in input_data.values():
-                v.clear()
+
 
 
 class ThreadedDataGenerator(threading.Thread):

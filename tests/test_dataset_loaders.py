@@ -234,7 +234,6 @@ class TestDatasetGenerator(object):
 
         _loop_data()
 
-
     def test_loader_datasets(self, generated_filesystem_loader):
         training_loader, validation_loader = generated_filesystem_loader.get_dataset_loader()
 
@@ -262,8 +261,8 @@ class TestTileGenerator(object):
                                    input_mapping={
                                        'input_1': {
                                            'primary': True,
-                                           'window_shape': (256, 256),
-                                           'stride': 256,
+                                           'window_shape': (512, 512),
+                                           'stride': 512,
                                            'channels': [
                                                [ "RGB", 1 ],
                                                [ "RGB", 2 ],
@@ -277,8 +276,8 @@ class TestTileGenerator(object):
                                    input_mapping={
                                        'input_1': {
                                            'primary': True,
-                                           'window_shape': (256, 256),
-                                           'stride': 256,
+                                           'window_shape': (512, 512),
+                                           'stride': 512,
                                            'channels': [
                                                ["RGB", 1],
                                                ["RGB", 2],
@@ -294,8 +293,8 @@ class TestTileGenerator(object):
                                        }
                                    })
 
-        assert len(train_data) == 432
-        assert len(validation_data) == 288
+        assert len(train_data) == 120
+        assert len(validation_data) == 80
         import time
         for i in range(len(train_data)):
             print (i, time.time())
