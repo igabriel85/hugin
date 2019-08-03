@@ -81,7 +81,7 @@ def main():
     args = parser.parse_args()
 
     if args.config is not None:
-        config = yaml.load(args.config)
+        config = yaml.load(args.config, Loader=yaml.CLoader)
     else:
         config = {}
 
