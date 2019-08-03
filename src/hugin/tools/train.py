@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import tempfile
+
 __license__ = \
     """Copyright 2019 West University of Timisoara
     
@@ -377,11 +379,14 @@ def train_handler(config, args):
 
     if args.split is None:
         dataset_cache = config.get("dataset_cache", None)
-        log.debug("dataset_cache is set from config to %s", dataset_cache)
-        dataset_cache = dataset_cache.format(model_name=model_name,
-                                             time=str(time.time()),
-                                             hostname=socket.gethostname(),
-                                             user=getpass.getuser())
+        if dataset_cache is not None:
+            log.debug("dataset_cache is set from config to %s", dataset_cache)
+            dataset_cache = dataset_cache.format(model_name=model_name,
+                                                 time=str(time.time()),
+                                                 hostname=socket.gethostname(),
+                                                 user=getpass.getuser())
+        else:
+            dataset_cache = tempfile.NamedTemporaryFile().name
     else:
         if not IOUtils.file_exists(args.split):
             raise FileNotFoundError("Invalid split file")
