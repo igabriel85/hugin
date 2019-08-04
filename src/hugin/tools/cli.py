@@ -22,9 +22,9 @@ from logging.config import dictConfig
 from pkg_resources import resource_stream
 
 try:
-    from yaml import CSafeLoader as Loader
+    from yaml import CLoader as Loader
 except ImportError:
-    from yaml import SafeLoader as Loader
+    from yaml import Loader as Loader
 
 import yaml
 
@@ -81,7 +81,7 @@ def main():
     args = parser.parse_args()
 
     if args.config is not None:
-        config = yaml.load(args.config, Loader=yaml.CLoader)
+        config = yaml.load(args.config, Loader=Loader)
     else:
         config = {}
 
