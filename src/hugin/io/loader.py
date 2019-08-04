@@ -499,9 +499,10 @@ class DataGenerator(object):
                     input_data[in_patch_name][count - 1] = in_patch_value
 
                 for out_patch_name, out_patch_value in output_patches.items():
+                    new_path_value = self._format_converter(out_patch_value)
                     if out_patch_name not in output_data:
-                        output_data[out_patch_name] = np.zeros((self._batch_size, ) + out_patch_value.shape, dtype=out_patch_value.dtype)
-                    output_data[out_patch_name][count - 1] = out_patch_value
+                        output_data[out_patch_name] = np.zeros((self._batch_size, ) + new_path_value.shape, dtype=new_path_value.dtype)
+                    output_data[out_patch_name][count - 1] = new_path_value
 
                 if count == self._batch_size:
                     in_arrays = {}
