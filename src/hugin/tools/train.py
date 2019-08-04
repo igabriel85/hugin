@@ -133,7 +133,10 @@ def train_keras(model_name,
     # Seed initialization should happed as early as possible
     if random_seed is not None:
         log.info("Setting Tensorflow random seed to: %d", random_seed)
-        tf.set_random_seed(random_seed)
+        try:
+            tf.set_random_seed(random_seed)
+        except AttributeError: # Tf 2.0 fix
+            tf.random.set_seed(random_seed)
 
     from keras.callbacks import EarlyStopping, TensorBoard, ReduceLROnPlateau
     from ..tools.callbacks import ModelCheckpoint, CSVLogger
