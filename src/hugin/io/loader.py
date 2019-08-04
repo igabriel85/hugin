@@ -511,10 +511,8 @@ class DataGenerator(object):
                     out_arrays = {}
                     for k,v in output_data.items():
                         out_arrays[k] = v if not self._copy else v.copy()
-                    in_arrays = self._flaten_simple_input(in_arrays)
-                    out_arrays = self._flaten_simple_input(out_arrays)
 
-                    yield (in_arrays, out_arrays)
+                    yield (self._flaten_simple_input(in_arrays), self._flaten_simple_input(out_arrays))
                     count = 0
 
         if count > 0:
@@ -524,10 +522,8 @@ class DataGenerator(object):
             for k, v in output_data.items():
                 subset = v[:count, :, :]
                 out_arrays[k] = subset if not self._copy else subset.copy()
-            in_arrays = self._flaten_simple_input(in_arrays)
-            out_arrays = self._flaten_simple_input(out_arrays)
 
-            yield (in_arrays, out_arrays)
+            yield (self._flaten_simple_input(in_arrays), self._flaten_simple_input(out_arrays))
 
 
 
