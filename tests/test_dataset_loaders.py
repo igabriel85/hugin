@@ -187,7 +187,7 @@ class TestLoaders(object):
         kwargs8 = self.base_kwargs.copy()
         kwargs8['validation_percent'] = 0.4
         fs8 = FileLoader(**kwargs8)
-        training_loader, validation_loader = fs8.get_dataset_loader()
+        training_loader, validation_loader = fs8.get_dataset_loaders()
 
         assert len(training_loader) == 2
         assert len(validation_loader) == 1
@@ -208,7 +208,7 @@ class TestFileSystemLoader(object):
 
 class TestDatasetGenerator(object):
     def test_loader_loops(self, generated_filesystem_loader):
-        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loader()
+        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
         assert len(training_loader) == 6
         assert len(validation_loader) == 4
 
@@ -235,7 +235,7 @@ class TestDatasetGenerator(object):
         _loop_data()
 
     def test_loader_datasets(self, generated_filesystem_loader):
-        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loader()
+        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
 
         dataset_name, dataset_parts = next(training_loader)
         assert isinstance(dataset_name, str)
@@ -247,11 +247,11 @@ class TestDatasetGenerator(object):
         assert rgb_dset.count == 3
 
 
-class TestTileGenerator(object):
+class TestDataGenerator(object):
 
-    #@pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
+    @pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
     def test_number_of_tiles(self, generated_filesystem_loader):
-        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loader()
+        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
         training_loader.loop = True
         validation_loader.loop = True
 
@@ -302,7 +302,7 @@ class TestTileGenerator(object):
 
 
     def test_number_of_tiles_clasic(self, generated_filesystem_loader):
-        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loader()
+        training_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
         training_loader.loop = True
         validation_loader.loop = True
 

@@ -164,29 +164,35 @@ def train_keras(model_name,
                                default_window_size=window_size,
                                default_stride_size=stride_size)
 
-    train_data = ThreadedDataGenerator(train_data, queue_size=prefetch_queue_size)
+    #train_data = ThreadedDataGenerator(train_data, queue_size=prefetch_queue_size)
 
-    validation_data = DataGenerator(validation_datasets,
-                                    batch_size,
-                                    mapping["inputs"],
-                                    mapping["target"],
-                                    format_converter=format_converter,
-                                    swap_axes=swap_axes,
-                                    default_window_size=window_size,
-                                    default_stride_size=stride_size)
 
-    validation_data = ThreadedDataGenerator(validation_data, queue_size=prefetch_queue_size)
 
     model_builder, model_builder_custom_options = import_model_builder(model_config["model_builder"])
     model_builder_option = model_config.get("options", {})
 
     steps_per_epoch = getattr(model_config, "steps_per_epoch", len(train_data) // batch_size)
-    validation_steps_per_epoch = getattr(model_config, "validation_steps_per_epoch", len(validation_data) // batch_size)
 
     log.info("Traing data has %d tiles", len(train_data))
-    log.info("Validation data has %d tiles", len(validation_data))
-    log.info("validation_steps_per_epoch: %d", validation_steps_per_epoch)
     log.info("steps_per_epoch: %d", steps_per_epoch)
+
+    if len(validation_datasets) > 0:
+        validation_data = DataGenerator(validation_datasets,
+                                        batch_size,
+                                        mapping["inputs"],
+                                        mapping["target"],
+                                        format_converter=format_converter,
+                                        swap_axes=swap_axes,
+                                        default_window_size=window_size,
+                                        default_stride_size=stride_size)
+
+        validation_data = ThreadedDataGenerator(validation_data, queue_size=prefetch_queue_size)
+
+        validation_steps_per_epoch = getattr(model_config, "validation_steps_per_epoch", len(validation_data) // batch_size)
+
+        log.info("Validation data has %d tiles", len(validation_data))
+        log.info("validation_steps_per_epoch: %d", validation_steps_per_epoch)
+
 
     load_only_weights = model_config.get("load_only_weights", False)
     checkpoint = model_config.get("checkpoint", None)
@@ -247,7 +253,7 @@ def train_keras(model_name,
         'callbacks': callbacks
     }
 
-    if len(validation_data) > 0 and validation_steps_per_epoch:
+    if len(validation_datasets) and len(validation_data) > 0 and validation_steps_per_epoch:
         log.info("We have validation data")
         options['validation_data'] = validation_data
         options["validation_steps"] = validation_steps_per_epoch
@@ -400,7 +406,7 @@ def train_handler(config, args):
 
     if not IOUtils.file_exists(dataset_cache):
         log.info("Loading datasets")
-        train_datasets, validation_datasets = data_source.get_dataset_loader()
+        train_datasets, validation_datasets = data_source.get_dataset_loaders()
         dump = (train_datasets._datasets, validation_datasets._datasets)
 
         log.info("Saving dataset cache to %s", dataset_cache)
