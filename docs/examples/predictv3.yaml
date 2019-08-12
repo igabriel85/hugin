@@ -1,0 +1,66 @@
+data_source: !!python/object/apply:hugin.io.FileSystemLoader
+  kwds:
+    data_pattern: '(?P<name>[0-9A-Za-z_]+)__(?P<idx>[A-Za-z0-9_\.]+)_(?P<type>B.*)\.tif$'
+    id_format: '{name}-{idx}'
+    type_format: '{type}'
+    input_source: /Users/mneagul/Downloads/S2A_OPER_MSI_L1C_TL_SGS__20170519T130610_A009957_T34TFQ_N02.05/data/rezolutie_nativa # Change to the path to the prediction data (can be changed at runtime)
+
+#predictor: !!python/object/apply:hugin.tools.predict.ScenePredictor
+#  kwds:
+#    predictor: !!python/object/apply:hugin.tools.predict.KerasPredictor
+#      kwds:
+#        model_path: /Users/mneagul/Work/Temp/mdl/forestry_training-09.hdf5
+#        model_builder: hugin.models.unet.unetv14:unet_v14
+#        input_shape: [256, 256]
+#    mapping:
+#      inputs:
+#        - [ "B02_10m", 1 ]
+#        - [ "B03_10m", 1 ]
+#        - [ "B04_10m", 1 ]
+#        - [ "B08_10m", 1 ]
+#      target:
+#        - [ "B01_10m_GTI", 1 ]
+#    prediction_merger: !!python/name:hugin.tools.predict.AverageMerger
+
+
+predictor: !!python/object/apply:hugin.infer.scene.AvgEnsembleScenePredictor
+  kwds:
+    predictors:
+      - model: !!python/object/apply:hugin.infer.scene.RasterScenePredictor
+          kwds:
+            predictor: !!python/object/apply:hugin.infer.core.KerasPredictor
+              kwds:
+                model_path: /Users/mneagul/Work/Temp/mdl/forestry_training-09.hdf5
+                model_builder: hugin.models.unet.unetv14:unet_v14
+                input_shape: [256, 256]
+            mapping:
+              inputs:
+                - [ "B02_10m", 1 ]
+                - [ "B03_10m", 1 ]
+                - [ "B04_10m", 1 ]
+                - [ "B08_10m", 1 ]
+              target:
+                - [ "B01_10m_GTI", 1 ]
+            prediction_merger: !!python/name:hugin.infer.core.AverageMerger
+    post_processors:
+      - !!python/name:hugin.infer.core.identity_processor
+
+
+models:
+  unetv14:
+    path: /Users/mneagul/Work/Temp/mdl/forestry_training-09.hdf5
+    builder: hugin.models.unet.unetv14:unet_v14
+    type: keras
+    window_size: [256, 256]
+    stride_size: 256 # Overlap the sliding window to compensate for the margin effect
+    match_id: '.*'
+    batch_size: 15 # Can be changed at runtime
+    swap_axes: True
+    mapping:
+      inputs:
+        - [ "B02_10m", 1 ]
+        - [ "B03_10m", 1 ]
+        - [ "B04_10m", 1 ]
+        - [ "B08_10m", 1 ]
+      target:
+        - [ "B01_10m_GTI", 1 ] # (Optional) Used for computing metrics

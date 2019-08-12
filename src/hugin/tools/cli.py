@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 __license__ = \
     """Copyright 2019 West University of Timisoara
     
@@ -14,22 +15,23 @@ __license__ = \
        See the License for the specific language governing permissions and
        limitations under the License.
     """
-
-import argparse
-from logging import getLogger
 from logging.config import dictConfig
-
 from pkg_resources import resource_stream
+
+import yaml
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader as Loader
 
-import yaml
-
 internal_logging_config = yaml.load(resource_stream(__name__, "/../_data/logging-config.yaml"), Loader=Loader)
 dictConfig(internal_logging_config)
+
+import argparse
+from logging import getLogger
+
+from hugin.tools.predicv3 import predict_handlerv3
 
 
 def predict_handler(*args, **kw):
@@ -77,6 +79,18 @@ def main():
     parser_predictv2.add_argument('--output-text', default=None, type=argparse.FileType('w'))
     parser_predictv2.add_argument('--scoring-gti', default=None, type=str, help="Component to use for scoring")
     parser_predictv2.set_defaults(func=predict_handler)
+
+    parser_predictv3 = subparsers.add_parser('predictv3', help='Run prediction')
+    parser_predictv3.add_argument('--ensemble-config', required=True,
+                                  type=argparse.FileType('r'),
+                                  help='Path to the ensable configuration')
+    parser_predictv3.add_argument('--input-dir', required=True)
+    parser_predictv3.add_argument('--data-source', required=False, default='directory',
+                                  help='Data source for input data. Defaults to directory')
+    parser_predictv3.add_argument('--output-dir', required=False, default=None)
+    parser_predictv3.add_argument('--output-text', default=None, type=argparse.FileType('w'))
+    parser_predictv3.add_argument('--scoring-gti', default=None, type=str, help="Component to use for scoring")
+    parser_predictv3.set_defaults(func=predict_handlerv3)
 
     args = parser.parse_args()
 

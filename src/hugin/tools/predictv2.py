@@ -57,7 +57,7 @@ def ensemble_avg(model_spec):
     for model_name, model_config, scene_data in model_spec:
         weight = model_config.get("weight", 1)
         total_weight += weight
-        sum_array += weight * scene_data.value
+        sum_array += weight * scene_data[()]
     result = sum_array / total_weight
     log.info("Finished averaging")
     return result
