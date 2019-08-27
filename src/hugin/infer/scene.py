@@ -9,6 +9,7 @@ import rasterio
 from logging import getLogger
 from tempfile import TemporaryFile
 
+from hugin.infer.core import metric_processor
 from .core import NullMerger, postprocessor
 from ..io import DataGenerator, DatasetGenerator
 from ..io.loader import adapt_shape_and_stride
@@ -46,8 +47,10 @@ class MultipleScenePredictor:
             yield (scene_id, scene_data, predictor.predict_scene_proba((scene_id, scene_data)))
 
 class BaseScenePredictor:
-    def __init__(self, post_processors=None):
+    def __init__(self, post_processors=None, metrics=None, gti_component=None):
         self.post_processors = post_processors
+        self.metrics = metrics
+        self.gti_component=gti_component
 
     @postprocessor
     def predict_scene_proba(self, *args, **kwargs):
@@ -60,7 +63,8 @@ class CoreScenePredictor(BaseScenePredictor):
                  stride_size=None,
                  output_shape=None,
                  prediction_merger=NullMerger,
-                 post_processors=None):
+                 post_processors=None,
+                 metrics=None):
         """
 
         :param predictor: Predictor to be used for predicting
@@ -69,7 +73,7 @@ class CoreScenePredictor(BaseScenePredictor):
         :param stride_size: Stride size to be used by `predict_scene_proba`
         :param output_shape: Output shape of the prediction (Optional). Inferred from input image size
         """
-        BaseScenePredictor.__init__(self, post_processors=post_processors)
+        BaseScenePredictor.__init__(self, post_processors=post_processors, metrics=metrics)
         self.predictor = predictor
 
         instance_path = ".".join([self.__module__, self.__class__.__name__])
@@ -82,6 +86,7 @@ class CoreScenePredictor(BaseScenePredictor):
         self.output_shape = output_shape
         self.prediction_merger_class = prediction_merger
 
+    @metric_processor
     @postprocessor
     def predict_scene_proba(self, scene, dataset_loader=None):
         """Runs the predictor on the input scene
@@ -183,22 +188,34 @@ class RasterScenePredictor(CoreScenePredictor, MultipleScenePredictor):
 
 
 class BaseEnsembleScenePredictor(BaseScenePredictor, MultipleScenePredictor):
-    def __init__(self, predictors,  *args, resume=False, cache_file=None, post_processors=None, **kwargs):
-        BaseScenePredictor.__init__(self, post_processors=post_processors)
+    def __init__(self, predictors,  *args, name=None, resume=False, cache_file=None, **kwargs):
+        post_processors = kwargs.pop('post_processors', None)
+        metrics = kwargs.pop('metrics', None)
+        instance_path = ".".join([self.__module__, self.__class__.__name__])
+        self.name = "%s[%s]" % (instance_path, name if name is not None else self.__hash__(), )
+        gti_component = kwargs.pop('gti_component', None)
+        BaseScenePredictor.__init__(self, post_processors=post_processors, metrics=metrics, gti_component=gti_component)
         MultipleScenePredictor.__init__(self, *args, **kwargs)
         self.predictors = predictors
+        for predictor in predictors:
+            predictor["predictor"].metrics = self.metrics
+            if predictor["predictor"].gti_component is None:
+                predictor["predictor"].gti_component = self.gti_component
         self.resume = resume
         cache_file = cache_file if cache_file is not None else TemporaryFile("w+b")
         self.cache = h5py.File(cache_file, 'a')
+        self.metrics_store = {}
         log.info("Ensemble predictions stored in: %s", cache_file)
 
     def predict_scenes_proba(self, scenes):
         log.debug("Computing predictions for models")
+        metrics_store = self.metrics_store
         for predictor_configuration in self.predictors:
             scenes.reset()
             predictor = predictor_configuration["predictor"]
             log.info("Predicting using predictor: %s", predictor)
-            for scene_id, _, prediction in super(BaseEnsembleScenePredictor, self).predict_scenes_proba(scenes, predictor):
+            for scene_id, _, result in super(BaseEnsembleScenePredictor, self).predict_scenes_proba(scenes, predictor):
+                prediction, metrics = result
                 dataset_name = "%s/%s" % (predictor.name, scene_id)
                 if self.resume and dataset_name in self.cache.keys():
                     log.info("Scene %s already predicted using %s. Skipping!", dataset_name, predictor.name)
@@ -206,16 +223,26 @@ class BaseEnsembleScenePredictor(BaseScenePredictor, MultipleScenePredictor):
                 log.debug("Storing prediction for %s under %s", scene_id, dataset_name)
                 self.cache[dataset_name] = prediction
 
+                metrics_store[scene_id] = metrics
+                print("Metrics from predict: %s", metrics)
         scenes.reset()
         for scene in scenes:
             scene_id, scene_data = scene
             log.debug("Ensembling prediction for %s", scene_id)
             result = self.predict_scene_proba(scene)
+            prediction, metrics = result
+            print ("predict_scenes_proba => ", metrics)
+            print ("predict_scenes_proba => ", self.metrics_store[scene_id])
+            scene_metrics = {}
+            scene_metrics.update(metrics)
+            scene_metrics.update(self.metrics_store[scene_id])
+            result = (prediction, scene_metrics)
             log.debug("Done ensembling")
             yield (scene_id, scene_data, result)
 
 
 class AvgEnsembleScenePredictor(BaseEnsembleScenePredictor):
+    @metric_processor
     @postprocessor
     def predict_scene_proba(self, scene):
         scene_id, scene_data = scene
@@ -227,12 +254,15 @@ class AvgEnsembleScenePredictor(BaseEnsembleScenePredictor):
             total_weight += predictor_weight
             dataset_name = "%s/%s" % (predictor.name, scene_id)
             log.debug("Using prediction from h5 dataset: %s", dataset_name)
+
             prediction = self.cache[dataset_name][()]
             if sum_array is None:
                 sum_array = np.zeros(prediction.shape, dtype=prediction.dtype)
             sum_array += predictor_weight * prediction
         result = sum_array / total_weight
+
         return result
+
 
 
 class SceneExporter(object):
@@ -249,12 +279,19 @@ class SceneExporter(object):
 
     def flow_from_source(self, loader, predictor):
         predictions = predictor.predict_scenes_proba(loader)
-        for scene_id, scene_data, prediction in predictions:
+        overall_metrics = {}
+        for scene_id, scene_data, result in predictions:
+            prediction, metrics = result
             self.save_scene(scene_id, scene_data, prediction)
+            overall_metrics[scene_id] = metrics
+        import json
+        print (json.dumps(overall_metrics, indent=4))
+            #print (metrics)
 
 
 class RasterIOSceneExporter(SceneExporter):
     def __init__(self, destination,
+                 metric_destination=None,
                  srs_source_component=None,
                  rasterio_options={},
                  rasterio_creation_options={},
@@ -264,6 +301,7 @@ class RasterIOSceneExporter(SceneExporter):
         self.rasterio_options = rasterio_options
         self.rasterio_creation_options = rasterio_creation_options
         self.filename_pattern = filename_pattern
+        self.metric_destination = metric_destination
 
     def save_scene(self, scene_id, scene_data, prediction, destination_file=None):
         if destination_file is None:

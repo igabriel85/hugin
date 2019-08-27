@@ -6,8 +6,29 @@ from hugin.tools.utils import import_model_builder
 
 log = getLogger(__name__)
 
+def metric_processor(func):
+    def __metric_handler(self, scene, *args, **kwargs):
+        metrics = kwargs.pop('_metrics', {})
+        original_result = func(self, scene, *args, _metrics=metrics, **kwargs)
+        scene_id, scene_data = scene
+        my_metrics = {}
+        if self.name not in metrics:
+            metrics[self.name] = my_metrics
+        else:
+            my_metrics = metrics[self.name]
+        if self.metrics:
+            if self.gti_component in scene_data:
+                gti = scene_data[self.gti_component]
+                for metric_name, metric_calculator in self.metrics.items():
+                    my_metrics[metric_name] = metric_calculator(original_result, gti.read())
+            else:
+                log.warning("Missing GTI data for GTI component: %s", self.gti_component)
+        return (original_result, metrics)
+
+    return __metric_handler
 def postprocessor(func):
-    def __handler(self, *args, **kwargs):
+    def __postprocessor_handler(self, *args, **kwargs):
+        kwargs.pop("_metrics", None)
         result = func(self, *args, **kwargs)
         postprocessors = getattr(self, 'post_processors')
         if not postprocessors:
@@ -33,7 +54,7 @@ def postprocessor(func):
         else:
             log.debug("No valid post-processors found for: %s", self)
             return result
-    return __handler
+    return __postprocessor_handler
 
 def identity_processor(arg):
     return arg
@@ -139,3 +160,6 @@ class KerasPredictor(RasterModel):
         self.model = load_model(self.model_path, custom_objects=self.custom_objects)
         log.info("Finished loading")
         return self.model
+
+def identity_metric(prediction, gti):
+    return 1
