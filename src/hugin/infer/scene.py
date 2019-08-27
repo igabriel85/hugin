@@ -1,11 +1,13 @@
 import re
+import os
 import math
 
 import h5py
 import numpy as np
+import rasterio
 
 from logging import getLogger
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryFile
 
 from .core import NullMerger, postprocessor
 from ..io import DataGenerator, DatasetGenerator
@@ -41,7 +43,7 @@ class MultipleScenePredictor:
             if self.scene_id_filter and self.scene_id_filter.match(scene_id) is None:
                 continue
             log.info("Classifying %s", scene_id)
-            yield (scene_id, predictor.predict_scene_proba((scene_id, scene_data)))
+            yield (scene_id, scene_data, predictor.predict_scene_proba((scene_id, scene_data)))
 
 class BaseScenePredictor:
     def __init__(self, post_processors=None):
@@ -175,8 +177,8 @@ class CoreScenePredictor(BaseScenePredictor):
 
 
 class RasterScenePredictor(CoreScenePredictor, MultipleScenePredictor):
-    def __init__(self, predictor, *args, scene_id_filter=None, **kwargs):
-        CoreScenePredictor.__init__(self, predictor, *args, **kwargs)
+    def __init__(self, model, *args, scene_id_filter=None, **kwargs):
+        CoreScenePredictor.__init__(self, model, *args, **kwargs)
         MultipleScenePredictor.__init__(self, scene_id_filter=scene_id_filter)
 
 
@@ -186,7 +188,7 @@ class BaseEnsembleScenePredictor(BaseScenePredictor, MultipleScenePredictor):
         MultipleScenePredictor.__init__(self, *args, **kwargs)
         self.predictors = predictors
         self.resume = resume
-        cache_file = cache_file if cache_file is not None else NamedTemporaryFile("w+b")
+        cache_file = cache_file if cache_file is not None else TemporaryFile("w+b")
         self.cache = h5py.File(cache_file, 'a')
         log.info("Ensemble predictions stored in: %s", cache_file)
 
@@ -194,9 +196,9 @@ class BaseEnsembleScenePredictor(BaseScenePredictor, MultipleScenePredictor):
         log.debug("Computing predictions for models")
         for predictor_configuration in self.predictors:
             scenes.reset()
-            predictor = predictor_configuration["model"]
+            predictor = predictor_configuration["predictor"]
             log.info("Predicting using predictor: %s", predictor)
-            for scene_id, prediction in super(BaseEnsembleScenePredictor, self).predict_scenes_proba(scenes, predictor):
+            for scene_id, _, prediction in super(BaseEnsembleScenePredictor, self).predict_scenes_proba(scenes, predictor):
                 dataset_name = "%s/%s" % (predictor.name, scene_id)
                 if self.resume and dataset_name in self.cache.keys():
                     log.info("Scene %s already predicted using %s. Skipping!", dataset_name, predictor.name)
@@ -206,11 +208,11 @@ class BaseEnsembleScenePredictor(BaseScenePredictor, MultipleScenePredictor):
 
         scenes.reset()
         for scene in scenes:
-            scene_id, _ = scene
+            scene_id, scene_data = scene
             log.debug("Ensembling prediction for %s", scene_id)
             result = self.predict_scene_proba(scene)
             log.debug("Done ensembling")
-            yield (scene_id, result)
+            yield (scene_id, scene_data, result)
 
 
 class AvgEnsembleScenePredictor(BaseEnsembleScenePredictor):
@@ -220,13 +222,64 @@ class AvgEnsembleScenePredictor(BaseEnsembleScenePredictor):
         total_weight = 0
         sum_array = None
         for predictor_configuration in self.predictors:
-            predictor = predictor_configuration["model"]
+            predictor = predictor_configuration["predictor"]
             predictor_weight = predictor_configuration.get("weight", 1)
             total_weight += predictor_weight
             dataset_name = "%s/%s" % (predictor.name, scene_id)
+            log.debug("Using prediction from h5 dataset: %s", dataset_name)
             prediction = self.cache[dataset_name][()]
             if sum_array is None:
                 sum_array = np.zeros(prediction.shape, dtype=prediction.dtype)
             sum_array += predictor_weight * prediction
         result = sum_array / total_weight
         return result
+
+
+class SceneExporter(object):
+    @property
+    def destination(self):
+        return self._destination
+
+    @destination.setter
+    def destination(self, destination):
+        self._destination = destination
+
+    def save_scene(self, scene_id, scene_data, prediction):
+        raise NotImplementedError()
+
+    def flow_from_source(self, loader, predictor):
+        predictions = predictor.predict_scenes_proba(loader)
+        for scene_id, scene_data, prediction in predictions:
+            self.save_scene(scene_id, scene_data, prediction)
+
+
+class RasterIOSceneExporter(SceneExporter):
+    def __init__(self, destination,
+                 srs_source_component=None,
+                 rasterio_options={},
+                 rasterio_creation_options={},
+                 filename_pattern="{scene_id}.tif"):
+        self.destination = destination
+        self.srs_source_component = srs_source_component
+        self.rasterio_options = rasterio_options
+        self.rasterio_creation_options = rasterio_creation_options
+        self.filename_pattern = filename_pattern
+
+    def save_scene(self, scene_id, scene_data, prediction, destination_file=None):
+        if destination_file is None:
+            destination_file=self.filename_pattern.format(scene_id=scene_id)
+        destination_file = os.path.join(self.destination, destination_file)
+        log.info("Saving scene %s to %s", scene_id, destination_file)
+        with rasterio.Env(**(self.rasterio_options)):
+            profile = {}
+            if self.srs_source_component is not None:
+                src = scene_data[self.srs_source_component]
+                profile.update (src.profile)
+            num_out_channels = prediction.shape[-1]
+            profile.update(self.rasterio_creation_options)
+            profile.update(dtype=prediction.dtype, count=num_out_channels)
+            if 'compress' not in profile:
+                profile['compress'] = 'lzw'
+            with rasterio.open(destination_file, "w", **profile) as dst:
+                for idx in range(0, num_out_channels):
+                    dst.write(prediction[:, :, idx], idx + 1)

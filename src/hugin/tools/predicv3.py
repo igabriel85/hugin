@@ -22,6 +22,7 @@ def predict_handlerv3(config, args):
 
     data_source = ensemble_config["data_source"]
     predictor = ensemble_config["predictor"]
+    saver = ensemble_config["output"]
 
     if data_source.input_source is None:
         data_source.set_input_source(input_dir)
@@ -32,15 +33,15 @@ def predict_handlerv3(config, args):
     dataset_loader, _ = data_source.get_dataset_loaders()
     log.info("classifying %d datasets", len(dataset_loader))
 
+
     if output_dir is not None:
         if not os.path.exists(output_dir):
             log.info("Creating output directory: %s", output_dir)
             os.makedirs(output_dir)
+        saver.destination = output_dir
 
-    dataset_loader.reset()
-    predictions = predictor.predict_scenes_proba(dataset_loader)
-    for scene_id, prediction in predictions:
-        print(scene_id)
+    saver.flow_from_source(dataset_loader, predictor)
+
 
 
 

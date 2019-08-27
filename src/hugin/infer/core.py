@@ -38,6 +38,14 @@ def postprocessor(func):
 def identity_processor(arg):
     return arg
 
+class CategoricalConverter(object):
+    def __init__(self, num_classes):
+        self.num_classes = num_classes
+
+    def __call__(self, probability_array):
+        prediction = np.argmax(probability_array, -1).astype(np.uint8)
+        return prediction.reshape(prediction.shape + (1,))
+
 class RasterModel(object):
     def __init__(self,
                  name=None,
