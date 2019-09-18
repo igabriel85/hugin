@@ -591,7 +591,7 @@ def hpo_keras(model_name,
         for hyperparameters in configurations:
             hyperparameters['model_metrics'] = model_metrics
 
-            if optimizer_name:  # TODO better fix
+            if optimizer_name:  # TODO what is this?
                 hpo_opt_param = {optimizer_name: {}}
                 for k, v in optimizer_params.items():
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
