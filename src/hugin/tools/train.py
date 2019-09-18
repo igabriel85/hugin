@@ -595,6 +595,7 @@ def hpo_keras(model_name,
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
             print("HP before model {}".format(hyperparameters))
+            sys.exit()
             model = hpo_model_prep(hyperparameters)
             print("HP send to model {}".format(hyperparameters))
             history = model.fit_generator(train_data, steps_per_epoch, **options)
