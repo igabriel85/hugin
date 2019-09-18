@@ -568,7 +568,6 @@ def hpo_keras(model_name,
             model_options.pop('optimizers')
             model_options.update(optimizer_params)
 
-        # sys.exit()
     model_params = model_config.get('params', None)
     if model_params is None:
         log.error("No parameters defined in configuration for HPO.")
@@ -589,16 +588,14 @@ def hpo_keras(model_name,
         runs = []
         for hyperparameters in configurations:
             hyperparameters['model_metrics'] = model_metrics
+
             if optimizer_name:  # TODO better fix
                 hpo_opt_param = {optimizer_name: {}}
                 for k, v in optimizer_params.items():
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
-            else:
-                print("No optimizer set")
-                print(hyperparameters)
-                sys.exit(1)
             model = hpo_model_prep(hyperparameters)
+            print("HP send to model {}".format(hyperparameters))
             history = model.fit_generator(train_data, steps_per_epoch, **options)
             # TODO score base on external datasource, to use eval
             score = max(history.history['val_acc'])
