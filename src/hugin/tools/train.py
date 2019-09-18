@@ -620,10 +620,10 @@ def hpo_keras(model_name,
 
         best_grid_model.save(final_model_location)
         log.info("Saving best configuration")
-        with open('hpo_random.json', 'w') as outfile:
+        with open('best_params_random.json', 'w') as outfile:
             json.dump(best_hyperparameters, outfile)
         log.info("Saving HPO Histories")
-        with open('best_params_random.json', 'w') as outfile:
+        with open('hpo_random.json', 'w') as outfile:
             json.dump(experiment_run, outfile)
         log.info("Done saving")
         log.info("Training completed")

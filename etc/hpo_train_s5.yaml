@@ -1,12 +1,12 @@
-model_name: forestry_training # Name of the model
+model_name: s5_train_test # Name of the model
 data_source: !!python/object/apply:hugin.io.FileSystemLoader
   kwds:
-    data_pattern: '(?P<name>[0-9A-Za-z_]+)_(?P<idx>[A-Za-z0-9_\.]+)_(?P<type>B.*)\.tif$'
+    data_pattern: data_pattern: '(?P<category>[0-9A-Za-z_]+)_AOI_(?P<location>\d+_[A-Za-z0-9]+)_(?P<type>[a-zA-Z]+)_(?P<idx>[a-zA-Z0-9]+)(?P<gti>_GTI)?.(?P<extension>.*)'
     id_format: '{name}-{idx}'
-    type_format: '{type}'
-    input_source: /Users/Gabriel/Downloads/ML4EO_Paduri/data
+    type_format: '{type}{gti}'
+    input_source: /data/syno1/sage-storage/Spacenet_5/nfs/data/cosmiq/spacenet/competitions/SN5_roads/tiles_upload/train/AOI_7_Moscow/MS
     validation_percent: 0.20
-dataset_cache: /Users/Gabriel/Downloads/ML4EO_Paduri/data/cache_hpo.yaml
+dataset_cache: /home/gabriel/experiments/s5/cache_hpo_s5.yaml
 max_number_images: 4
 window_size: [ 256, 256 ]
 stride_size: 100
@@ -14,32 +14,33 @@ random_seed: 42
 model_type: keras
 mapping:
   inputs:   
-    - [ "B02_10m", 1 ]
-    - [ "B03_10m", 1 ]
-    - [ "B04_10m", 1 ]
-    - [ "B08_10m", 1 ]
+    - [ "MS", 1 ]
+    - [ "MS", 2 ]
+    - [ "MS", 3 ]
+    - [ "MS", 4 ]
   target:
-    - [ "B01_10m_GTI", 1 ]
+    - [ "MS_GTI", 1 ]
 model:
   hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
   hpo_mode: "minimize"
   hpo_sample_size: 10
   model_builder: hugin.models.unet.unetv14:unet_v2
   batch_size: 5
-  model_path: "/tmp/{model_name}.hdf5"
+  model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"
   loss: categorical_crossentropy
-  log: "/tmp/{model_name}.csv"
+  log: "/home/gabriel/experiments/s5/models/{model_name}.csv"
   train_epochs: 10
   swap_axes: True
   params:
-    drop_p1: [0.1, 0.8]
-    drop_p2: [0.1, 0.8]
-    activation_p1: ['relu', 'elu']
-    activation_p2: ['relu', 'elu']
-    batch_norm: [1, 0]
+    drop_p1: [0.3]
+    drop_p2: [0.3]
+    activation_p1: ['relu']
+    activation_p2: ['relu']
+    batch_norm: [0]
   optimizers:
     - nadam
     - SGD
+    - Adam
 #  optimizers:
 #    nadam:
 #        lr: [0.01,0.001]
@@ -54,7 +55,7 @@ model:
 
   metrics:
     - accuracy
-#    - !!python/name:hugin.tools.utils.dice_coef
+    - !!python/name:hugin.tools.utils.dice_coef
   format_converter: !!python/object/apply:hugin.io.CategoricalConverter
     kwds:
       num_classes: 2
