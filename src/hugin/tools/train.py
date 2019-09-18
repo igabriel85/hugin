@@ -596,8 +596,10 @@ def hpo_keras(model_name,
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
             g_hyperparameters = hyperparameters
+            if isinstance(g_hyperparameters['optimiser'], dict):
+                print("ok {}".format(g_hyperparameters['optimiser']))
             log.info("HP send to model {}".format(g_hyperparameters))
-            print(type(g_hyperparameters['optimiser']))
+            # print(type(g_hyperparameters['optimiser']))
             # print(g_hyperparameters['optimiser'].get_config())
             sys.exit()
             model = hpo_model_prep(hyperparameters)
