@@ -14,10 +14,10 @@ random_seed: 42
 model_type: keras
 mapping:
   inputs:   
-    - [ "MS", 1 ]
-    - [ "MS", 2 ]
-    - [ "MS", 3 ]
-    - [ "MS", 4 ]
+    - [ "MSNone", 1 ]
+    - [ "MSNone", 2 ]
+    - [ "MSNone", 3 ]
+    - [ "MSNone", 4 ]
   target:
     - [ "MS_GTI", 1 ]
 model:
