@@ -622,7 +622,7 @@ def hpo_keras(model_name,
             overview['time'] = end_grid
             exp_run = {}
             exp_run['config'] = g_hyperparameters
-            exp_run['history'] = history.history
+            exp_run['history'] = str(history.history)
             runs.append(exp_run)
             print("\tScore:", score, "Configuration:", g_hyperparameters, "Time:", int(end_grid), 'seconds')
         experiment_run['hpo'] = runs
