@@ -594,10 +594,9 @@ def hpo_keras(model_name,
                 for k, v in optimizer_params.items():
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
-            print("HP before model {}".format(hyperparameters))
-            sys.exit()
+            g_hyperparameters = hyperparameters
             model = hpo_model_prep(hyperparameters)
-            print("HP send to model {}".format(hyperparameters))
+            log.info("HP send to model {}".format(hyperparameters))
             history = model.fit_generator(train_data, steps_per_epoch, **options)
             # TODO score base on external datasource, to use eval
             score = max(history.history['val_acc'])
@@ -607,12 +606,15 @@ def hpo_keras(model_name,
             if score > best_grid_score:  # Keep best model
                 best_grid_score = score
                 best_grid_model = model
-                best_hyperparameters = hyperparameters
+                best_hyperparameters = g_hyperparameters
             end_grid = time.time() - start_grid
             overview = history.history
             overview['time'] = end_grid
-            runs.append(history.history)
-            print("\tScore:", score, "Configuration:", hyperparameters, "Time:", int(end_grid), 'seconds')
+            exp_run = {}
+            exp_run['config'] = g_hyperparameters
+            exp_run['history'] = history.history
+            runs.append(exp_run)
+            print("\tScore:", score, "Configuration:", g_hyperparameters, "Time:", int(end_grid), 'seconds')
         experiment_run['hpo'] = runs
         print("\t Best score:", best_grid_score, "Best configuration: ", best_hyperparameters)
         log.info("Saving model to %s", os.path.abspath(final_model_location))
