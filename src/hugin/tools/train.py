@@ -577,7 +577,7 @@ def hpo_keras(model_name,
     log.info("HPO parameters set to {}".format(model_params))
     # Add HPO params to model_options
     model_options.update(model_params)
-    print(model_options)
+    log.info("Model option set to {}".format(model_options))
     if hpo_type == 'random':
         start_grid = time.time()
         sample_size = hpo_sample_size
@@ -594,6 +594,9 @@ def hpo_keras(model_name,
                 for k, v in optimizer_params.items():
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
+            else:
+                print("No optimizer set")
+                sys.exit(1)
             model = hpo_model_prep(hyperparameters)
             history = model.fit_generator(train_data, steps_per_epoch, **options)
             # TODO score base on external datasource, to use eval
