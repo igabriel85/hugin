@@ -596,11 +596,11 @@ def hpo_keras(model_name,
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
             g_hyperparameters = hyperparameters.copy()
-            try:
-                opt_cfg = g_hyperparameters['optimiser'].get_config()
-                g_hyperparameters['optimiser'] = opt_cfg
-            except:
-                pass
+            # try:
+            #     opt_cfg = g_hyperparameters['optimiser'].get_config()
+            #     g_hyperparameters['optimiser'] = opt_cfg
+            # except:
+            #     pass
             log.info("Hyperparameters send in model {}".format(g_hyperparameters))
             # if g_hyperparameters['optimiser']
 
