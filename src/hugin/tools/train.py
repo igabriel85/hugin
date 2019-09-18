@@ -596,9 +596,14 @@ def hpo_keras(model_name,
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
             g_hyperparameters = hyperparameters.copy()
+            try:
+                opt_cfg = g_hyperparameters['optimiser'].get_config()
+                g_hyperparameters['optimiser'] = opt_cfg
+            except:
+                pass
             log.info("Hyperparameters send in model {}".format(g_hyperparameters))
             # if g_hyperparameters['optimiser']
-            print(g_hyperparameters['optimiser'].get_config())
+
             model = hpo_model_prep(hyperparameters)
             history = model.fit_generator(train_data, steps_per_epoch, **options)
             # TODO score base on external datasource, to use eval
