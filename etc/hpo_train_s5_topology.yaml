@@ -49,18 +49,18 @@ model:
 #    - SGD
 #    - Adam
 #  optimizers:
-    nadam:
-        lr: [0.01,0.001]
-        beta_1: [0.7, 0.9]
-        beta_2: [0.7, 0.9]
-        epsilon: [0.01, 0.1]
-        schedule_decay: [0.01, 0.1]
-#  optimiser: !!python/object/apply:keras.optimizers.Adam
-#      kwds:
-#        lr: !!float 0.0001
-#        beta_1: !!float 0.9
-#        beta_2: !!float 0.999
-#        epsilon: !!float 1e-8
+#    nadam:
+#        lr: [0.01,0.001]
+#        beta_1: [0.7, 0.9]
+#        beta_2: [0.7, 0.9]
+#        epsilon: [0.01, 0.1]
+#        schedule_decay: [0.01, 0.1]
+  optimiser: !!python/object/apply:keras.optimizers.Adam
+      kwds:
+        lr: !!float 0.0001
+        beta_1: !!float 0.9
+        beta_2: !!float 0.999
+        epsilon: !!float 1e-8
 
   metrics:
     - accuracy
