@@ -595,8 +595,8 @@ def hpo_keras(model_name,
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
             g_hyperparameters = hyperparameters
+            log.info("HP send to model {}".format(g_hyperparameters))
             model = hpo_model_prep(hyperparameters)
-            log.info("HP send to model {}".format(hyperparameters))
             history = model.fit_generator(train_data, steps_per_epoch, **options)
             # TODO score base on external datasource, to use eval
             score = max(history.history['val_acc'])
@@ -625,10 +625,10 @@ def hpo_keras(model_name,
 
         best_grid_model.save(final_model_location)
         log.info("Saving best configuration")
-        with open('best_params_random.json', 'w') as outfile:
+        with open('best_params_random_{}.json'.format(model_name), 'w') as outfile:
             json.dump(best_hyperparameters, outfile)
         log.info("Saving HPO Histories")
-        with open('hpo_random.json', 'w') as outfile:
+        with open('hpo_random_{}.json'.format(model_name), 'w') as outfile:
             json.dump(experiment_run, outfile)
         log.info("Done saving")
         log.info("Training completed")
