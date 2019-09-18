@@ -26,6 +26,7 @@ import yaml
 import json
 from numpy import random
 import importlib
+import inspect
 
 from hyperopt import Trials, STATUS_OK, tpe
 from hyperas import optim
@@ -596,6 +597,7 @@ def hpo_keras(model_name,
                 hyperparameters['optimizers'] = hpo_opt_param
             g_hyperparameters = hyperparameters
             log.info("HP send to model {}".format(g_hyperparameters))
+            print(inspect.isclass(g_hyperparameters['optimiser']))
             # print(g_hyperparameters['optimiser'].get_config())
             sys.exit()
             model = hpo_model_prep(hyperparameters)
