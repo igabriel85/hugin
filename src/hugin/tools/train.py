@@ -596,7 +596,7 @@ def hpo_keras(model_name,
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
                 hyperparameters['optimizers'] = hpo_opt_param
             g_hyperparameters = hyperparameters
-
+            log.info("HP send to model {}".format(g_hyperparameters))
             # print(g_hyperparameters['optimiser'].get_config())
             model = hpo_model_prep(hyperparameters)
             log.info("HP send to model {}".format(g_hyperparameters))
