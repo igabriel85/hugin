@@ -596,6 +596,7 @@ def hpo_keras(model_name,
                 hyperparameters['optimizers'] = hpo_opt_param
             else:
                 print("No optimizer set")
+                print(hyperparameters)
                 sys.exit(1)
             model = hpo_model_prep(hyperparameters)
             history = model.fit_generator(train_data, steps_per_epoch, **options)
