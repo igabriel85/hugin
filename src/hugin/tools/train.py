@@ -578,6 +578,7 @@ def hpo_keras(model_name,
     # Add HPO params to model_options
     model_options.update(model_params)
     log.info("Model option set to {}".format(model_options))
+    print("ehathfhfhfhfhfhfhfh {}".format(optimizer_name))
     if hpo_type == 'random':
         start_grid = time.time()
         sample_size = hpo_sample_size
@@ -601,7 +602,6 @@ def hpo_keras(model_name,
             #     g_hyperparameters['optimiser'] = opt_cfg
             # except:
             #     pass
-            print("ehathfhfhfhfhfhfhfh {}".format(optimizer_name))
             sys.exit()
             log.info("Hyperparameters send in model {}".format(g_hyperparameters))
             # if g_hyperparameters['optimiser']
