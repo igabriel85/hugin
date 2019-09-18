@@ -23,7 +23,7 @@ mapping:
 model:
   hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
   hpo_mode: "minimize"
-  hpo_sample_size: 10
+  hpo_sample_size: 5
   model_builder: hugin.models.unet.unetv14:unet_v2
   batch_size: 15
   model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"

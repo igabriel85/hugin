@@ -23,13 +23,13 @@ mapping:
 model:
   hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
   hpo_mode: "minimize"
-  hpo_sample_size: 2
+  hpo_sample_size: 15
   model_builder: hugin.models.unet.unetv14:unet_v2
   batch_size: 15
   model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"
   loss: categorical_crossentropy
   log: "/home/gabriel/experiments/s5/models/{model_name}.csv"
-  train_epochs: 2
+  train_epochs: 10
   swap_axes: True
   adaptive_lr:
     monitor: val_loss
@@ -44,10 +44,10 @@ model:
     activation_p1: ['relu', 'elu']
     activation_p2: ['relu', 'elu']
     batch_norm: [0]
-  optimizers:
-    - nadam
-    - SGD
-    - Adam
+#  optimizers:
+#    - nadam
+#    - SGD
+#    - Adam
 #  optimizers:
 #    nadam:
 #        lr: [0.01,0.001]
@@ -55,12 +55,12 @@ model:
 #        beta_2: [0.7, 0.9]
 #        epsilon: [0.01, 0.1]
 #        schedule_decay: [0.01, 0.1]
-#  optimiser: !!python/object/apply:keras.optimizers.Adam
-#      kwds:
-#        lr: !!float 0.0001
-#        beta_1: !!float 0.9
-#        beta_2: !!float 0.999
-#        epsilon: !!float 1e-8
+  optimiser: !!python/object/apply:keras.optimizers.Adam
+      kwds:
+        lr: !!float 0.0001
+        beta_1: !!float 0.9
+        beta_2: !!float 0.999
+        epsilon: !!float 1e-8
 
   metrics:
     - accuracy
