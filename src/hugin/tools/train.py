@@ -601,6 +601,7 @@ def hpo_keras(model_name,
             #     g_hyperparameters['optimiser'] = opt_cfg
             # except:
             #     pass
+            print(optimizer_name)
             log.info("Hyperparameters send in model {}".format(g_hyperparameters))
             # if g_hyperparameters['optimiser']
 
