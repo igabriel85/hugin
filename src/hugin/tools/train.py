@@ -618,11 +618,13 @@ def hpo_keras(model_name,
                 best_grid_model = model
                 best_hyperparameters = g_hyperparameters
             end_grid = time.time() - start_grid
-            overview = history.history
-            overview['time'] = end_grid
             exp_run = {}
+            exp_run['time'] = end_grid
             exp_run['config'] = g_hyperparameters
-            exp_run['history'] = str(history.history)
+            n_lr = []
+            for l in history.history['history']['lr']:
+                n_lr.append(str(l))
+            exp_run['history'] = n_lr
             runs.append(exp_run)
             print("\tScore:", score, "Configuration:", g_hyperparameters, "Time:", int(end_grid), 'seconds')
         experiment_run['hpo'] = runs
