@@ -55,7 +55,7 @@ model:
 
   metrics:
     - accuracy
-    - !!python/name:hugin.tools.utils.dice_coef
+#    - !!python/name:hugin.tools.utils.dice_coef
   format_converter: !!python/object/apply:hugin.io.CategoricalConverter
     kwds:
       num_classes: 2
