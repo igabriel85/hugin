@@ -23,13 +23,18 @@ mapping:
 model:
   hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
   hpo_mode: "minimize"
-  hpo_sample_size: 2
+  hpo_sample_size: 5
   model_builder: hugin.models.unet.unetv14:unet_v2
   batch_size: 15
   model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"
   loss: categorical_crossentropy
   log: "/home/gabriel/experiments/s5/models/{model_name}.csv"
-  train_epochs: 2
+  early_stopping:
+    monitor: val_loss
+    patience: 4
+    verbose: 0
+    mode: auto
+  train_epochs: 15
   swap_axes: True
   params:
     drop_p1: [0.3]
