@@ -621,10 +621,13 @@ def hpo_keras(model_name,
             exp_run = {}
             exp_run['time'] = end_grid
             exp_run['config'] = g_hyperparameters
-            n_lr = []
-            for l in history.history['lr']:
-                n_lr.append(str(l))
-            history.history['lr'] = n_lr
+            try:
+                n_lr = []
+                for l in history.history['lr']:
+                    n_lr.append(str(l))
+                history.history['lr'] = n_lr
+            except:
+                log.warning("Learning rate not found in history. Skipping")
             exp_run['history'] = history.history
             runs.append(exp_run)
             print("\tScore:", score, "Configuration:", g_hyperparameters, "Time:", int(end_grid), 'seconds')
