@@ -151,6 +151,10 @@ class BaseLoader(object):
         components[dataset_type] = dataset_path
         return dataset_id
 
+    def get_dataset_loaders(self):
+        return self.build_dataset_loaders(self.get_training_datasets(),
+                                          self.get_validation_datasets())
+
     def get_dataset_loader(self):
         return self.build_dataset_loaders(self.get_training_datasets(),
                                           self.get_validation_datasets())
