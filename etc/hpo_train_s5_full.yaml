@@ -32,7 +32,7 @@ model:
   log: "/home/gabriel/experiments/s5/models/{model_name}.csv"
   early_stopping:
     monitor: val_loss
-    patience: 4
+    patience: 8
     verbose: 0
     mode: auto
   adaptive_lr:
