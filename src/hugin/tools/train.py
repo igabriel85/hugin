@@ -593,7 +593,10 @@ def hpo_keras(model_name,
         start_grid = time.time()
         sample_size = hpo_sample_size
         configurations = create_random_configurations(model_options, sample_size)
-        best_random_score = 0
+        if hpo_mode == 'minimize':
+            best_random_score = float('inf')
+        else:
+            best_random_score = 0
         best_random_model = None
         best_hyperparameters = None
         experiment_run = {}
