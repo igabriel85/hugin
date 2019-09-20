@@ -28,7 +28,7 @@ model:
   hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
   hpo_mode: "minimize"
   hpo_watch: "val_loss"
-  hpo_sample_size: 5
+  hpo_sample_size: 9
   model_builder: hugin.models.unet.unetv14:unet_v2
   batch_size: 15
   model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"
@@ -46,7 +46,7 @@ model:
     verbose: 1
     epsilon: !!float 1e-4
     mode: min
-  train_epochs: 15
+  train_epochs: 100
   swap_axes: True
   params:
     drop_p1: [0.2]
