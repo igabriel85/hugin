@@ -155,9 +155,10 @@ class BaseLoader(object):
         return self.build_dataset_loaders(self.get_training_datasets(),
                                           self.get_validation_datasets())
 
-    def get_dataset_loader(self):
-        return self.build_dataset_loaders(self.get_training_datasets(),
-                                          self.get_validation_datasets())
+    def get_dataset_loader(self, dataset, rasterio_env=None, _cache_data=None):
+        rasterio_env = rasterio_env if rasterio_env is not None else self.rasterio_env
+        _cache_data = _cache_data if _cache_data is not None else self.cache_io
+        return DatasetGenerator((dataset, ), rasterio_env=rasterio_env, _cache_data=_cache_data)
 
     def build_dataset_loaders(self, training_datasets, validation_datasets):
         training_loader = DatasetGenerator(training_datasets, rasterio_env=self.rasterio_env, _cache_data=self.cache_io)
