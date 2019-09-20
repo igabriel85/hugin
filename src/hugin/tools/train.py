@@ -384,6 +384,11 @@ def hpo_keras(model_name,
         log.error("Unsuported HPO type {}".format(hpo_type))
         sys.exit()
     hpo_mode = model_config.get("hpo_mode", "minimize")
+    hpo_watch = model_config.get("hpo_watch", "val_loss")
+    if hpo_mode not in ['minimize', 'maximize']:
+        log.error("Unsuported HPO mode {}".format(hpo_mode))
+        sys.exit()
+    sys.exit()
     hpo_sample_size = model_config.get("hpo_sample_size", 5)
     log.info("HPO Sample size: {}".format(hpo_sample_size))
 
@@ -501,9 +506,17 @@ def hpo_keras(model_name,
                                              time=str(time.time()),
                                              hostname=socket.gethostname(),
                                              user=getpass.getuser())
+
+    def rename_config_artefacts(loc, confID):  # TODO move function from train
+        path, extension = loc.split('.')
+        # print(path.split('/')[-1])
+        newLoc = "{}_{}.{}".format(path, confID, extension)
+        log.info("Model file renamed to {}".format(newLoc))
+        return newLoc
+
     log.info("Model path is %s", final_model_location)
 
-    sys.exit()
+    # sys.exit()
     def hpo_model_prep(configuration):
         log.info("Building model")
 
@@ -583,8 +596,8 @@ def hpo_keras(model_name,
         start_grid = time.time()
         sample_size = hpo_sample_size
         configurations = create_random_configurations(model_options, sample_size)
-        best_grid_score = 0
-        best_grid_model = None
+        best_random_score = 0
+        best_random_model = None
         best_hyperparameters = None
         experiment_run = {}
         runs = []
@@ -609,14 +622,29 @@ def hpo_keras(model_name,
             model = hpo_model_prep(hyperparameters)
             history = model.fit_generator(train_data, steps_per_epoch, **options)
             # TODO score base on external datasource, to use eval
-            score = max(history.history['val_acc'])
+            if hpo_mode == 'minimize':
+                try:
+                    score = min(history.history[hpo_watch])
+                except:
+                    log.warning("Could not find minimize metric {} using default".format(hpo_watch))
+                    score = min(history.history['val_loss'])
+                if score < best_random_score:  # Keep best model
+                    best_random_score = score
+                    best_random_model = model
+                    best_hyperparameters = g_hyperparameters
+            else:
+                try:
+                    score = max(history.history[hpo_watch])
+                except:
+                    log.warning("Could not find maximize metric {} using default".format(hpo_watch))
+                    score = max(history.history['val_acc'])
+                if score > best_random_score:  # Keep best model
+                    best_random_score = score
+                    best_random_model = model
+                    best_hyperparameters = g_hyperparameters
+
             # score = model.evaluate(X_test, y_test, verbose=0)[-1]
             # score = model.evaluate_generator(validation_data, validation_steps_per_epoch,  max_queue_size=1, workers=1)[-1]
-
-            if score > best_grid_score:  # Keep best model
-                best_grid_score = score
-                best_grid_model = model
-                best_hyperparameters = g_hyperparameters
             end_grid = time.time() - start_grid
             exp_run = {}
             exp_run['time'] = end_grid
@@ -632,14 +660,15 @@ def hpo_keras(model_name,
             runs.append(exp_run)
             print("\tScore:", score, "Configuration:", g_hyperparameters, "Time:", int(end_grid), 'seconds')
         experiment_run['hpo'] = runs
-        print("\t Best score:", best_grid_score, "Best configuration: ", best_hyperparameters)
+        print("\t Best score:", best_random_score, "Best configuration: ", best_hyperparameters)
+        # final_model_location = rename_config_artefacts(final_model_location, conf_count)
         log.info("Saving model to %s", os.path.abspath(final_model_location))
         dir_head, dir_tail = os.path.split(final_model_location)
         if dir_tail and not IOUtils.file_exists(dir_head):
             log.info("Creating directory: %s", dir_head)
             IOUtils.recursive_create_dir(dir_head)
 
-        best_grid_model.save(final_model_location)
+        best_random_model.save(final_model_location)
         log.info("Saving best configuration")
         with open('best_params_random_{}.json'.format(model_name), 'w') as outfile:
             json.dump(best_hyperparameters, outfile)
