@@ -1,4 +1,4 @@
-model_name: s5_train_selective # Name of the model
+model_name: s5_train_selective_2 # Name of the model
 data_source: !!python/object/apply:hugin.io.FileSystemLoader
   kwds:
     data_pattern: '(?P<category>[0-9A-Za-z_]+)_AOI_(?P<location>\d+_[A-Za-z0-9]+)_(?P<type>[a-zA-Z]+)_(?P<idx>[a-zA-Z0-9]+)(?P<gti>_GTI)?.tif$'
@@ -42,6 +42,10 @@ model:
     verbose: 1
     epsilon: !!float 1e-4
     mode: min
+  checkpoint:
+    path: "/home/gabriel/experiments/s5/%(model_name)s/%(hostname)s-%(user)s-{epoch:02d}.hdf5"
+    options: # This is optional
+      save_best_only: True
   train_epochs: 100
   swap_axes: True
   params:
