@@ -380,7 +380,7 @@ def hpo_keras(model_name,
     prefetch_queue_size = model_config.get("prefetch_queue_size", 10)
     input_channels = len(mapping["inputs"])
     hpo_type = model_config.get("hpo", "random")
-    if hpo_type not in ['random', "grid"]: # Check for supported HPO methods
+    if hpo_type not in ['random', "grid"]: #TODO Check for supported HPO methods
         log.error("Unsuported HPO type {}".format(hpo_type))
         sys.exit()
     hpo_mode = model_config.get("hpo_mode", "minimize")
@@ -503,7 +503,7 @@ def hpo_keras(model_name,
                                              user=getpass.getuser())
     log.info("Model path is %s", final_model_location)
 
-
+    sys.exit()
     def hpo_model_prep(configuration):
         log.info("Building model")
 
@@ -591,7 +591,7 @@ def hpo_keras(model_name,
         for hyperparameters in configurations:
             hyperparameters['model_metrics'] = model_metrics
 
-            if optimizer_name:  # TODO what is this?
+            if optimizer_name:  # TODO better fix
                 hpo_opt_param = {optimizer_name: {}}
                 for k, v in optimizer_params.items():
                     hpo_opt_param[optimizer_name][k] = hyperparameters.pop(k)
