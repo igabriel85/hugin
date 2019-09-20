@@ -1,0 +1,81 @@
+model_name: s5_train_full # Name of the model
+data_source: !!python/object/apply:hugin.io.FileSystemLoader
+  kwds:
+    data_pattern: '(?P<category>[0-9A-Za-z_]+)_AOI_(?P<location>\d+_[A-Za-z0-9]+)_(?P<type>[a-zA-Z]+)_(?P<idx>[a-zA-Z0-9]+)(?P<gti>_GTI)?.tif$'
+    id_format: '{location}-{idx}'
+    type_format: '{type}{gti}'
+    input_source: /data/syno1/sage-storage/Spacenet_5/nfs/data/cosmiq/spacenet/competitions/SN5_roads/tiles_upload/train/
+    validation_percent: 0.20
+dataset_cache: /home/gabriel/experiments/s5/cache_hpo_s5_full.yaml
+max_number_images: 4
+window_size: [ 256, 256 ]
+stride_size: 100
+random_seed: 42
+model_type: keras
+mapping:
+  inputs:   
+    - [ "MSNone", 1 ]
+    - [ "MSNone", 2 ]
+    - [ "MSNone", 3 ]
+    - [ "MSNone", 4 ]
+    - [ "MSNone", 5 ]
+    - [ "MSNone", 6 ]
+    - [ "MSNone", 7 ]
+    - [ "MSNone", 8 ]
+  target:
+    - [ "MS_GTI", 1 ]
+model:
+  hpo: "random" # TODO add support for more advanced HPO methods currently supports only grid and random
+  hpo_mode: "minimize"
+  hpo_watch: "val_loss"
+  hpo_sample_size: 5
+  model_builder: hugin.models.unet.unetv14:unet_v2
+  batch_size: 15
+  model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"
+  loss: categorical_crossentropy
+  log: "/home/gabriel/experiments/s5/models/{model_name}.csv"
+  early_stopping:
+    monitor: val_loss
+    patience: 4
+    verbose: 0
+    mode: auto
+  adaptive_lr:
+    monitor: val_loss
+    factor: !!float 0.1
+    patience: 3
+    verbose: 1
+    epsilon: !!float 1e-4
+    mode: min
+  train_epochs: 15
+  swap_axes: True
+  params:
+    drop_p1: [0.2]
+    drop_p2: [0.2]
+    activation_p1: ['relu', 'elu', 'selu']
+    activation_p2: ['elu', 'relu', 'selu']
+    batch_norm: [0]
+#  optimizers:
+#    - nadam
+#    - SGD
+#    - Adam
+#  optimizers:
+#    nadam:
+#        lr: [0.01,0.001]
+#        beta_1: [0.7, 0.9]
+#        beta_2: [0.7, 0.9]
+#        epsilon: [0.01, 0.1]
+#        schedule_decay: [0.01, 0.1]
+
+  optimiser: !!python/object/apply:keras.optimizers.Adam
+      kwds:
+        lr: !!float 0.001
+        beta_1: !!float 0.9
+        beta_2: !!float 0.7
+        epsilon: !!float 1e-8
+
+  metrics:
+    - accuracy
+    - !!python/name:hugin.tools.utils.dice_coef
+  format_converter: !!python/object/apply:hugin.io.CategoricalConverter
+    kwds:
+      num_classes: 2
