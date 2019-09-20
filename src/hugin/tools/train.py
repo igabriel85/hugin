@@ -388,6 +388,8 @@ def hpo_keras(model_name,
     if hpo_mode not in ['minimize', 'maximize']:
         log.error("Unsuported HPO mode {}".format(hpo_mode))
         sys.exit()
+    print(hpo_mode)
+    print(hpo_watch)
     sys.exit()
     hpo_sample_size = model_config.get("hpo_sample_size", 5)
     log.info("HPO Sample size: {}".format(hpo_sample_size))
@@ -515,8 +517,6 @@ def hpo_keras(model_name,
         return newLoc
 
     log.info("Model path is %s", final_model_location)
-
-    # sys.exit()
     def hpo_model_prep(configuration):
         log.info("Building model")
 
