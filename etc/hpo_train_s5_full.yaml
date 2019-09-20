@@ -18,10 +18,6 @@ mapping:
     - [ "MSNone", 2 ]
     - [ "MSNone", 3 ]
     - [ "MSNone", 4 ]
-    - [ "MSNone", 5 ]
-    - [ "MSNone", 6 ]
-    - [ "MSNone", 7 ]
-    - [ "MSNone", 8 ]
   target:
     - [ "MS_GTI", 1 ]
 model:
