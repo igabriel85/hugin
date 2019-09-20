@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 __license__ = \
     """Copyright 2019 West University of Timisoara
-    
+
        Licensed under the Apache License, Version 2.0 (the "License");
        you may not use this file except in compliance with the License.
        You may obtain a copy of the License at
-    
+
            http://www.apache.org/licenses/LICENSE-2.0
-    
+
        Unless required by applicable law or agreed to in writing, software
        distributed under the License is distributed on an "AS IS" BASIS,
        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -57,7 +57,7 @@ def ensemble_avg(model_spec):
     for model_name, model_config, scene_data in model_spec:
         weight = model_config.get("weight", 1)
         total_weight += weight
-        sum_array += weight * scene_data.value
+        sum_array += weight * scene_data[()]
     result = sum_array / total_weight
     log.info("Finished averaging")
     return result
@@ -68,6 +68,7 @@ def run_final_postprocessings(postprocessings, final_data, probability_data):
         log.debug("Running %s", proc)
         final_data, probability_data = proc(final_data, probability_data)
     return final_data, probability_data
+
 
 def predict_handler(config, args):
     ensemble_config_file = args.ensemble_config
@@ -160,10 +161,8 @@ def predict_handler(config, args):
             input_mapping = mapping["inputs"]
             output_mapping = mapping.get("target", {})
 
-            # tile_loader = DatasetLoader((scene,), rasterio_env=dataset_loader.rasterio_env,
-            #                             _cache_data=dataset_loader._cache_data)
-            # tile_loader.reset()
             tile_loader = data_source.get_dataset_loader(scene)
+
             tile_loader.reset()
             data_generator = DataGenerator(tile_loader,
                                            batch_size=batch_size,
