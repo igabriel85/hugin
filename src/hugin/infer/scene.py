@@ -109,15 +109,15 @@ class CoreScenePredictor(BaseScenePredictor):
                                        default_window_size=self.predictor.input_shape,
                                        default_stride_size=self.stride_size)
 
-        if len(output_mapping) == 1:
+        if len(output_mapping) == 1: # Output is defined by GTI
             rio_raster = scene_data[output_mapping[0][0]]
             output_window_shape, output_stride_size = adapt_shape_and_stride(rio_raster,
                                                                              data_generator.primary_scene,
                                                                              self.predictor.input_shape,
                                                                              self.stride_size)
         else:
-            output_window_shape = model_config.get('output_window_size', self.predictor.input_shape)
-            output_stride_size = model_config.get('output_stride_size', self.stride_size)
+            output_window_shape = self.predictor.input_shape
+            output_stride_size = self.stride_size
 
         output_shape = self.output_shape
         if output_shape:
