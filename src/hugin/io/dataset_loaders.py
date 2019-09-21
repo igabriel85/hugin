@@ -147,7 +147,7 @@ class BaseLoader(object):
         dataset_type = self._type_format.format(**match_components)
 
         if dataset_type in components:
-            raise KeyError("Already registered: %s %s" % (dataset_type, dataset_path))
+            raise KeyError("Already registered: %s %s %s" % (dataset_id, dataset_type, dataset_path))
         components[dataset_type] = dataset_path
         return dataset_id
 
