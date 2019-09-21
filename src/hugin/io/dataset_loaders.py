@@ -198,7 +198,7 @@ class FileLoader(BaseLoader):
             match = self._re.match(file_name)
             if not match:
                 continue
-            match_components = match.groupdict()
+            match_components = match.groupdict(default='')
             dataset_path = self._prepend_path + fpath
             dataset_id = self.update_dataset(match_components=match_components, dataset_path=dataset_path)
             dataset = self.get_dataset_by_id(dataset_id)
@@ -230,7 +230,7 @@ class FileSystemLoader(BaseLoader):
                 if not match:
                     continue
 
-                match_components = match.groupdict()
+                match_components = match.groupdict(default='')
                 dataset_path = self._prepend_path + fpath
                 dataset_id = self.update_dataset(dataset=datasets, match_components=match_components,
                                                  dataset_path=dataset_path)
