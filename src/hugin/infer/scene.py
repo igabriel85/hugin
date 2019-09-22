@@ -267,6 +267,9 @@ class AvgEnsembleScenePredictor(BaseEnsembleScenePredictor):
 
 
 class SceneExporter(object):
+    def __init__(self, destination=None, metric_destination=None):
+        self.destination = destination
+        self.metric_destination = metric_destination
     @property
     def destination(self):
         return self._destination
@@ -275,7 +278,7 @@ class SceneExporter(object):
     def destination(self, destination):
         self._destination = destination
 
-    def save_scene(self, scene_id, scene_data, prediction):
+    def save_scene(self, scene_id, scene_data, prediction, destination=None):
         raise NotImplementedError()
 
     def flow_from_source(self, loader, predictor):
@@ -290,24 +293,33 @@ class SceneExporter(object):
             #print (metrics)
 
 
+class MultipleFormatExporter(SceneExporter):
+    def __init__(self, *args, exporters=[], **kwargs):
+        SceneExporter.__init__(self, *args, **kwargs)
+        self.exporters = exporters
+
+    def save_scene(self, *args, destination=None, **kwargs):
+        destination = self.destination if destination is None else destination
+        for exporter in self.exporters:
+            exporter.save_scene(*args, destination=destination, **kwargs)
+
 class RasterIOSceneExporter(SceneExporter):
-    def __init__(self, destination,
-                 metric_destination=None,
+    def __init__(self, *args,
                  srs_source_component=None,
                  rasterio_options={},
                  rasterio_creation_options={},
-                 filename_pattern="{scene_id}.tif"):
-        self.destination = destination
+                 filename_pattern="{scene_id}.tif", **kwargs):
+        SceneExporter.__init__(self, *args, **kwargs)
         self.srs_source_component = srs_source_component
         self.rasterio_options = rasterio_options
         self.rasterio_creation_options = rasterio_creation_options
         self.filename_pattern = filename_pattern
-        self.metric_destination = metric_destination
 
-    def save_scene(self, scene_id, scene_data, prediction, destination_file=None):
+    def save_scene(self, scene_id, scene_data, prediction, destination=None, destination_file=None):
         if destination_file is None:
             destination_file=self.filename_pattern.format(scene_id=scene_id)
-        destination_file = os.path.join(self.destination, destination_file)
+        destination = self.destination if destination is None else destination
+        destination_file = os.path.join(destination, destination_file)
         log.info("Saving scene %s to %s", scene_id, destination_file)
         with rasterio.Env(**(self.rasterio_options)):
             profile = {}
@@ -317,8 +329,16 @@ class RasterIOSceneExporter(SceneExporter):
             num_out_channels = prediction.shape[-1]
             profile.update(self.rasterio_creation_options)
             profile.update(dtype=prediction.dtype, count=num_out_channels)
-            if 'compress' not in profile:
-                profile['compress'] = 'lzw'
+            if 'driver' not in profile:
+                profile['driver'] = 'GTiff'
+            if profile['driver'] == 'GTiff':
+                if 'compress' not in profile:
+                    profile['compress'] = 'lzw'
+            prediction_height, prediction_width = prediction.shape[0:2]
+            if 'height' not in profile:
+                profile['height'] = prediction_height
+            if 'width' not in profile:
+                profile['width'] = prediction_width
             with rasterio.open(destination_file, "w", **profile) as dst:
                 for idx in range(0, num_out_channels):
                     dst.write(prediction[:, :, idx], idx + 1)
