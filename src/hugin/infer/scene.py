@@ -44,7 +44,8 @@ class MultipleScenePredictor:
             if self.scene_id_filter and self.scene_id_filter.match(scene_id) is None:
                 continue
             log.info("Classifying %s", scene_id)
-            yield (scene_id, scene_data, predictor.predict_scene_proba((scene_id, scene_data)))
+            output = (scene_id, scene_data, predictor.predict_scene_proba((scene_id, scene_data)))
+            yield output
 
 class BaseScenePredictor:
     def __init__(self, post_processors=None, metrics=None, gti_component=None):

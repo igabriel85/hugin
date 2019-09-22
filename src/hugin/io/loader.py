@@ -86,12 +86,13 @@ class ColorMapperConverter(object):
 
 
 def adapt_shape_and_stride(scene, base_scene, shape, stride):
+    if scene == base_scene:
+        return shape, stride
     x_geo_orig, y_geo_orig = base_scene.xy(shape[0], shape[1], offset='ul')
 
     computed_shape = scene.index(x_geo_orig, y_geo_orig)
     computed_stride, _ = scene.index(*base_scene.xy(stride, stride, offset='ul'))
 
-    # We should check if scene and base_scene are the same and avoid the computation
     return computed_shape, computed_stride
 
 class TileGenerator(object):
