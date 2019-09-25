@@ -54,8 +54,8 @@ model:
   train_epochs: 100
   swap_axes: True
   params:
-    drop_p1: [0.2]
-    drop_p2: [0.2]
+    drop_p1: [0.1, 0.2]
+    drop_p2: [0.1, 0.2]
     activation_p1: ['relu', 'elu', 'selu']
     activation_p2: ['elu', 'relu', 'selu']
     batch_norm: [0]
