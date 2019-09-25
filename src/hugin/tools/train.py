@@ -740,6 +740,7 @@ def train_handler(config, args):
 
     model_name = config["model_name"]
     model_type = config["model_type"]
+    hpo_trigger = config.get("hpo", False)
     random_seed = config.get("random_seed", None)
     model_config = config["model"]
     tilling_config = config.get("tilling", {})
@@ -827,7 +828,7 @@ def train_handler(config, args):
     log.info("Using %d validation datasets", len(validation_datasets))
 
     # HPO trigger
-    hpo_trigger = True
+    # hpo_trigger = True
     if model_type == "keras":
         if hpo_trigger:
             log.info("Hyper parameter optimization started ..")

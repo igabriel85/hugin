@@ -12,6 +12,7 @@ window_size: [ 256, 256 ]
 stride_size: 100
 random_seed: 42
 model_type: keras
+hpo: 1
 mapping:
   inputs:   
     - [ "MSNone", 1 ]
