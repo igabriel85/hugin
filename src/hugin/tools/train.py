@@ -792,7 +792,7 @@ def train_handler(config, args):
 
     if not IOUtils.file_exists(dataset_cache):
         log.info("Loading datasets")
-        train_datasets, validation_datasets = data_source.get_dataset_loader()
+        train_datasets, validation_datasets = data_source.get_dataset_loaders()
         dump = (train_datasets._datasets, validation_datasets._datasets)
 
         log.info("Saving dataset cache to %s", dataset_cache)
