@@ -6,7 +6,7 @@ data_source: !!python/object/apply:hugin.io.FileSystemLoader
     type_format: '{type}{gti}'
     input_source: /data/syno1/sage-storage/Spacenet_5/nfs/data/cosmiq/spacenet/competitions/SN5_roads/tiles_upload/train/
     validation_percent: 0.20
-dataset_cache: /home/gabriel/experiments/s5/cache_hpo_s5_full.yaml
+dataset_cache: /home/gabriel/experiments/s5/cache_hpo_s5_full_2.yaml
 max_number_images: 4
 window_size: [ 256, 256 ]
 stride_size: 100
