@@ -1,0 +1,59 @@
+model_name: s5_train_selective_all_spacenet # Name of the model
+data_source: !!python/object/apply:hugin.io.FileSystemLoader
+  kwds:
+    data_pattern: '(?P<category>[0-9A-Za-z_]+)_AOI_(?P<location>\d+_[A-Za-z0-9]+)_(?P<type>[a-zA-Z]+)_(?P<idx>[a-zA-Z0-9]+)(?P<gti>_GTI)?.tif$'
+    id_format: '{location}-{idx}'
+    type_format: '{type}{gti}'
+    input_source: /data/syno1/sage-storage/Spacenet_5/nfs/data/cosmiq/spacenet/competitions/SN5_roads/tiles_upload/train/
+    validation_percent: 0.20
+dataset_cache: /home/gabriel/experiments/s5/cache_train_all_spacenet.yaml
+max_number_images: 4
+window_size: [ 256, 256 ]
+stride_size: 100
+random_seed: 42
+model_type: keras
+mapping:
+  inputs:   
+    - [ "MSNone", 1 ]
+    - [ "MSNone", 5 ]
+    - [ "MSNone", 4 ]
+    - [ "MSNone", 8 ]
+  target:
+    - [ "MS_GTI", 1 ]
+model:
+  model_builder: hugin.models.unet.unetv14:unet_v2
+  batch_size: 15
+  model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"
+  loss: categorical_crossentropy
+  log: "/home/gabriel/experiments/s5/models/{model_name}.csv"
+  early_stopping:
+    monitor: val_loss
+    patience: 8
+    verbose: 0
+    mode: auto
+  adaptive_lr:
+    monitor: val_loss
+    factor: !!float 0.1
+    patience: 3
+    verbose: 1
+    epsilon: !!float 1e-4
+    mode: min
+  checkpoint:
+    path: "/home/gabriel/experiments/s5/%(model_name)s/%(hostname)s-%(user)s-{epoch:02d}.hdf5"
+    options: # This is optional
+      save_best_only: False
+  train_epochs: 900
+  swap_axes: True
+  optimiser: !!python/object/apply:keras.optimizers.Adam
+      kwds:
+        lr: !!float 0.001
+        beta_1: !!float 0.9
+        beta_2: !!float 0.7
+        epsilon: !!float 1e-8
+
+  metrics:
+    - accuracy
+    - !!python/name:hugin.tools.utils.dice_coef
+  format_converter: !!python/object/apply:hugin.io.CategoricalConverter
+    kwds:
+      num_classes: 2
