@@ -26,5 +26,3 @@ models:
         - [ "MS", 5 ]
         - [ "MS", 4 ]
         - [ "MS", 8 ]
-      target:
-        - [ "MS_GTI", 1 ]
