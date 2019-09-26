@@ -3,7 +3,7 @@ data_source: !!python/object/apply:hugin.io.FileSystemLoader
     data_pattern: '(?P<category>[0-9A-Za-z_]+)_AOI_(?P<location>\d+_[A-Za-z0-9]+)_(?P<type>[a-zA-Z]+)_(?P<idx>[a-zA-Z0-9]+)(?P<gti>_GTI)?.tif$'
     id_format: '{location}-{idx}'
     type_format: '{type}{gti}'
-    input_source: /data/syno1/sage-storage/Spacenet_5/nfs/data/cosmiq/spacenet/competitions/SN5_roads/tiles_upload/test_public/AOI_9_San_Juan/MS/
+    input_source: /data/syno1/sage-storage/Spacenet_5/nfs/data/cosmiq/spacenet/competitions/SN5_roads/tiles_upload/test_public/AOI_9_San_Juan/MS
 ensemble:
   method: average # voting, weighted average
 models:
