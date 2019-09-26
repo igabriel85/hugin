@@ -20,9 +20,8 @@ models:
     swap_axes: True
     mapping:
       inputs:
-        - [ "MSNone", 1 ]
-        - [ "MSNone", 5 ]
-        - [ "MSNone", 4 ]
         - [ "MSNone", 8 ]
+        - [ "MSNone", 4 ]
+        - [ "MSNone", 5 ]
       target:
         - [ "MS_GTI", 1 ]
