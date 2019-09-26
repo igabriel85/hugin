@@ -21,7 +21,7 @@ mapping:
     - [ "MS_GTI", 1 ]
 model:
   model_builder: hugin.models.unet.unetv14:unet_v2
-  batch_size: 15
+  batch_size: 20
   model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"
   loss: categorical_crossentropy
   log: "/home/gabriel/experiments/s5/models/{model_name}.csv"
