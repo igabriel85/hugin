@@ -23,6 +23,6 @@ models:
     swap_axes: True
     mapping:
       inputs:
-        - [ "MSNone", 8 ]
-        - [ "MSNone", 4 ]
-        - [ "MSNone", 5 ]
+        - [ "MS", 8 ]
+        - [ "MS", 4 ]
+        - [ "MS", 5 ]
