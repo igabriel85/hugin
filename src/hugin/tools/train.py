@@ -201,6 +201,7 @@ def train_keras(model_name,
     early_stopping = model_config.get("early_stopping", None)
     adaptive_lr = model_config.get("adaptive_lr", None)
     tensor_board = model_config.get("tensor_board", False)
+    class_weights = model_config.get("class_weights", False)
     tb_log_dir = model_config.get("tb_log_dir", os.path.join("/tmp/", model_name))  # TensorBoard log directory
     tb_log_dir = tb_log_dir.format(model_name=model_name,
                                    time=str(time.time()),
@@ -326,6 +327,10 @@ def train_keras(model_name,
     fit_model.compile(loss=model_loss, optimizer=optimiser, metrics=model_metrics)
     log.info("Model compiled")
     model.summary()
+
+    if class_weights:
+        options['class_weight'] = class_weights
+        log.info("Class weights set to: {}".format(class_weights))
 
     fit_model.fit_generator(train_data, steps_per_epoch, **options)
 
