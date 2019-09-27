@@ -144,8 +144,11 @@ class Augmentation(object):
                                            deterministic=True))
         # if 'custom' in self.arg['augment']:
         #     return 0
-
-        seq = iaa.Sequential(operators, random_order=self.arg['augment']['random_order'])
+        try:
+            seq = iaa.Sequential(operators, random_order=self.arg['augment']['random_order'])
+        except Exception as inst:
+            log.error("Error while initializing Augmenter Sequencer with {} and {}".format(type(inst), inst.args))
+            sys.exit(1)
 
         return seq
 

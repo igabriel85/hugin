@@ -15,7 +15,20 @@ augment:
   operators:
     Fliplr: !!float 0.2
     Flipud: !!float 0.2
-    
+    Dropout:
+      p: !!python/list [0.05, 0.2]
+      prop: !!float 0.2
+    Sharpen:
+      alpha: !!python/tuple [0.0, 1.0]
+      prop: !!float 0.2
+    Crop:
+      percent: !!python/tuple [0, 0.2]
+      prop: !!float 0.2
+    CropAndPad:
+      percent: !!python/tuple [-0.2, 0.2]
+      pad_mode: "edge"
+      prop: !!float 0.2
+    random_order: True
 model_type: keras
 mapping:
   inputs:
