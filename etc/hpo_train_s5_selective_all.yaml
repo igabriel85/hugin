@@ -28,7 +28,7 @@ augment:
       percent: !!python/tuple [-0.2, 0.2]
       pad_mode: "edge"
       prop: !!float 0.2
-    random_order: True
+  random_order: True
 model_type: keras
 mapping:
   inputs:
