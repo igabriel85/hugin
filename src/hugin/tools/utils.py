@@ -74,7 +74,8 @@ def dice_coef(y_true, y_pred, smooth=1):
     union = K.sum(y_true, axis=[1, 2, 3]) + K.sum(y_pred, axis=[1, 2, 3])
     return K.mean((2. * intersection + smooth) / (union + smooth), axis=0)
 
-
+def generalized_dice_loss(y_true, y_pred):
+    return 1 - dice_coef(y_true, y_pred)
 
 def tf_log10(x):
     numerator = tf.log(x)
