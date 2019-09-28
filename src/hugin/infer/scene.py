@@ -10,6 +10,7 @@ from logging import getLogger
 from tempfile import TemporaryFile
 
 from hugin.infer.core import metric_processor
+from hugin.io.loader import CategoricalConverter as TrainingCategoricalConverter
 from .core import NullMerger, postprocessor
 from ..io import DataGenerator, DatasetGenerator
 from ..io.loader import adapt_shape_and_stride
@@ -18,7 +19,7 @@ from ..io.loader import adapt_shape_and_stride
 log = getLogger(__name__)
 
 
-class MultipleScenePredictor:
+class MultipleSceneModel:
     """
     This class is intended to be inherited by classes aimed to predict on multiple scenes
     """
@@ -47,7 +48,53 @@ class MultipleScenePredictor:
             output = (scene_id, scene_data, predictor.predict_scene_proba((scene_id, scene_data)))
             yield output
 
-class BaseScenePredictor:
+    def train_scenes(self, scenes, validation_scenes=None, trainer = None):
+        trainer = self if trainer is None else trainer
+
+        inputs = self.mapping["inputs"]
+        target = self.mapping["target"]
+
+        validation_scenes = [] if validation_scenes is None else validation_scenes
+        train_data = DataGenerator(scenes,
+                                   self.predictor.batch_size,
+                                   inputs,
+                                   target,
+                                   format_converter=self.format_converter,
+                                   swap_axes=self.predictor.swap_axes,
+                                   postprocessing_callbacks=[], # ???
+                                   default_window_size=self.window_size,
+                                   default_stride_size=self.stride_size
+                                   )
+
+        input_shapes, output_shapes = train_data.mapping_sizes
+
+        if self.predictor.input_shapes is None:
+            self.predictor.input_shapes = input_shapes
+        if self.predictor.output_shapes is None:
+            self.predictor.output_shapes = output_shapes
+
+
+        log.info("Training data has %d tiles", len(train_data))
+        validation_data = None
+        if validation_scenes:
+            validation_data = DataGenerator(validation_scenes,
+                                            self.predictor.batch_size,
+                                            inputs,
+                                            target,
+                                            format_converter=None,
+                                            swap_axes=self.predictor.swap_axes,
+                                            postprocessing_callbacks=None,  # ???
+                                            default_window_size=self.window_size,
+                                            default_stride_size=self.stride_size)
+            log.info("Validation data has %d tiles", len(validation_data))
+        else:
+            log.info("No validation data")
+
+        options = {}
+        log.info("Running training from %s", trainer.predictor)
+        self.predictor.fit_generator(train_data, validation_data, **options)
+
+class BaseSceneModel:
     def __init__(self, post_processors=None, metrics=None, gti_component=None):
         self.post_processors = post_processors
         self.metrics = metrics
@@ -57,14 +104,16 @@ class BaseScenePredictor:
     def predict_scene_proba(self, *args, **kwargs):
         raise NotImplementedError()
 
-class CoreScenePredictor(BaseScenePredictor):
+class CoreScenePredictor(BaseSceneModel):
     def __init__(self, predictor,
                  name=None,
                  mapping=None,
                  stride_size=None,
+                 window_size=None,
                  output_shape=None,
                  prediction_merger=NullMerger,
                  post_processors=None,
+                 format_converter=TrainingCategoricalConverter(2),
                  metrics=None):
         """
 
@@ -74,18 +123,20 @@ class CoreScenePredictor(BaseScenePredictor):
         :param stride_size: Stride size to be used by `predict_scene_proba`
         :param output_shape: Output shape of the prediction (Optional). Inferred from input image size
         """
-        BaseScenePredictor.__init__(self, post_processors=post_processors, metrics=metrics)
+        BaseSceneModel.__init__(self, post_processors=post_processors, metrics=metrics)
         self.predictor = predictor
 
         instance_path = ".".join([self.__module__, self.__class__.__name__])
         self.name = "%s[%s]:%s" % (instance_path, name if name is not None else self.__hash__(), predictor.name)
         self.stride_size = stride_size if stride_size is not None else self.predictor.input_shape[0]
+        self.window_size = window_size
         if not mapping: raise TypeError("Missing `mapping` specification in %s" % self.name)
         self.mapping = mapping
         self.input_mapping = mapping.get('inputs')
         self.output_mapping = mapping.get('output', None)
         self.output_shape = output_shape
         self.prediction_merger_class = prediction_merger
+        self.format_converter = format_converter
 
     @metric_processor
     @postprocessor
@@ -107,7 +158,7 @@ class CoreScenePredictor(BaseScenePredictor):
                                        output_mapping=None,
                                        swap_axes=self.predictor.swap_axes,
                                        loop=False,
-                                       default_window_size=self.predictor.input_shape,
+                                       default_window_size=self.window_size,
                                        default_stride_size=self.stride_size)
 
         if len(output_mapping) == 1: # Output is defined by GTI
@@ -117,7 +168,7 @@ class CoreScenePredictor(BaseScenePredictor):
                                                                              self.predictor.input_shape,
                                                                              self.stride_size)
         else:
-            output_window_shape = self.predictor.input_shape
+            output_window_shape = self.window_size
             output_stride_size = self.stride_size
 
         output_shape = self.output_shape
@@ -166,37 +217,33 @@ class CoreScenePredictor(BaseScenePredictor):
                     y_offset += 1
                 else:
                     x_offset += 1
-
-        # image_probs = get_probabilities_from_tiles(
-        #     self.predictor,
-        #     data_generator,
-        #     output_width,
-        #     output_height,
-        #     output_window_shape[0],
-        #     output_window_shape[1],
-        #     output_stride_size,
-        #     self.predictor.batch_size,
-        #     #merge_strategy=tile_merge_strategy
-        # )
         prediction = merger.get_prediction()
         return prediction
 
 
-class RasterScenePredictor(CoreScenePredictor, MultipleScenePredictor):
+class RasterScenePredictor(CoreScenePredictor, MultipleSceneModel):
     def __init__(self, model, *args, scene_id_filter=None, **kwargs):
         CoreScenePredictor.__init__(self, model, *args, **kwargs)
-        MultipleScenePredictor.__init__(self, scene_id_filter=scene_id_filter)
+        MultipleSceneModel.__init__(self, scene_id_filter=scene_id_filter)
+
+class RasterSceneTrainer(CoreScenePredictor, MultipleSceneModel):
+    def __init__(self, model, *args, scene_id_filter=None, **kwargs):
+        CoreScenePredictor.__init__(self, model, *args, **kwargs)
+        MultipleSceneModel.__init__(self, scene_id_filter=scene_id_filter)
+
+    def predict_scene_proba(self, scene, dataset_loader=None):
+        raise NotImplementedError()
 
 
-class BaseEnsembleScenePredictor(BaseScenePredictor, MultipleScenePredictor):
+class BaseEnsembleScenePredictor(BaseSceneModel, MultipleSceneModel):
     def __init__(self, predictors,  *args, name=None, resume=False, cache_file=None, **kwargs):
         post_processors = kwargs.pop('post_processors', None)
         metrics = kwargs.pop('metrics', None)
         instance_path = ".".join([self.__module__, self.__class__.__name__])
         self.name = "%s[%s]" % (instance_path, name if name is not None else self.__hash__(), )
         gti_component = kwargs.pop('gti_component', None)
-        BaseScenePredictor.__init__(self, post_processors=post_processors, metrics=metrics, gti_component=gti_component)
-        MultipleScenePredictor.__init__(self, *args, **kwargs)
+        BaseSceneModel.__init__(self, post_processors=post_processors, metrics=metrics, gti_component=gti_component)
+        MultipleSceneModel.__init__(self, *args, **kwargs)
         self.predictors = predictors
         for predictor in predictors:
             predictor["predictor"].metrics = self.metrics
@@ -281,7 +328,7 @@ class SceneExporter(object):
     def save_scene(self, scene_id, scene_data, prediction, destination=None):
         raise NotImplementedError()
 
-    def flow_from_source(self, loader, predictor):
+    def flow_prediction_from_source(self, loader, predictor):
         predictions = predictor.predict_scenes_proba(loader)
         overall_metrics = {}
         for scene_id, scene_data, result in predictions:

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from hugin.tools.standardize import standardize_handler
 
 __license__ = \
     """Copyright 2019 West University of Timisoara
@@ -31,7 +32,8 @@ dictConfig(internal_logging_config)
 import argparse
 from logging import getLogger
 
-from hugin.tools.predicv3 import predict_handlerv3
+from hugin.tools.predictv3 import predict_handlerv3
+from hugin.tools.trainv2 import train_handler as train_handlerv2
 
 
 def predict_handler(*args, **kw):
@@ -52,6 +54,15 @@ def main():
     parser.add_argument('--config', type=argparse.FileType('r'), required=False, default=None,
                         help='Path to config file')
     subparsers = parser.add_subparsers(help='Available commands')
+
+    parser_trainv2 = subparsers.add_parser('trainv2', help="Train a model")
+    parser_trainv2.add_argument('--config', required=True, type=argparse.FileType('r'), help="Path to configuration file")
+    parser_trainv2.add_argument('--input-dir', required=False, default=None)
+    parser_trainv2.set_defaults(func=train_handlerv2)
+
+    parser_standardize = subparsers.add_parser('standardize', help="Train standardize model")
+    parser_standardize.set_defaults(func=standardize_handler)
+
     parser_train = subparsers.add_parser('train', help='Train a model')
     parser_train.add_argument('--switch-to-prefix', action='store_true', default=False,
                               help="Chdir to python sysprefix")

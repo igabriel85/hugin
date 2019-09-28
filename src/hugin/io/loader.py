@@ -85,13 +85,13 @@ class ColorMapperConverter(object):
         pass
 
 
-def adapt_shape_and_stride(scene, base_scene, shape, stride):
+def adapt_shape_and_stride(scene, base_scene, shape, stride, offset='ul'):
     if scene == base_scene:
         return shape, stride
-    x_geo_orig, y_geo_orig = base_scene.xy(shape[0], shape[1], offset='ul')
+    x_geo_orig, y_geo_orig = base_scene.xy(shape[0], shape[1], offset=offset)
 
     computed_shape = scene.index(x_geo_orig, y_geo_orig)
-    computed_stride, _ = scene.index(*base_scene.xy(stride, stride, offset='ul'))
+    computed_stride, _ = scene.index(*base_scene.xy(stride, stride, offset=offset))
 
     return computed_shape, computed_stride
 
@@ -240,15 +240,13 @@ class TileGenerator(object):
 
         for mapping_name, mapping in input_mapping.items():
             base_channel = mapping['channels'][0][0]
-            target_shape, target_stride = adapt_shape_and_stride(self._scene[base_channel], primary_base_scene,
-                                                                 primary_shape, primary_stride)
+            target_shape, target_stride = mapping["window_shape"], mapping["stride"]
             input_generators[mapping_name] = self._generate_tiles_for_mapping(self._scene, mapping, target_shape,
                                                                               target_stride)
 
         for mapping_name, mapping in output_mapping.items():
             base_channel = mapping['channels'][0][0]
-            target_shape, target_stride = adapt_shape_and_stride(self._scene[base_channel], primary_base_scene,
-                                                                 primary_shape, primary_stride)
+            target_shape, target_stride = mapping["window_shape"], mapping["stride"]
             output_generators[mapping_name] = self._generate_tiles_for_mapping(self._scene, mapping, target_shape,
                                                                                target_stride)
 
@@ -353,11 +351,13 @@ class DataGenerator(object):
 
         primary_mapping_type_id = self._primary_mapping['channels'][0][0]
         first = next(self._datasets)
+        scene_id, scene_data = first
+
         self._datasets.reset()
         if self._datasets.datasets:
-            if primary_mapping_type_id not in first[1]:
+            if primary_mapping_type_id not in scene_data:
                 raise KeyError("Unknown type id: %s", primary_mapping_type_id)
-            self.primary_scene = first[1][primary_mapping_type_id]
+            self.primary_scene = scene_data[primary_mapping_type_id]
         else:  # No scenes available
             self.primary_scene = None
 
@@ -388,6 +388,21 @@ class DataGenerator(object):
 
         log.info("Primary sliding window: %s stride: %s", self.primary_window_shape, self.primary_stride)
         self._mapping = (input_mapping, output_mapping)
+
+        for entry in self._mapping:
+            if entry is None: # Probablyy missing GTI
+                continue
+            for mapping_type, mapping_value in entry.items():
+                if 'window_shape' not in mapping_value or 'stride' not in mapping_value:
+                    scene_type = mapping_value['channels'][0][0]
+                    coregistration = mapping_value.get('coregistration', {})
+                    offset_type = coregistration.get('offset', "ul")
+                    current_scene = scene_data[scene_type]
+                    entry_shape, entry_stride = adapt_shape_and_stride(current_scene, self.primary_scene, self.primary_window_shape, self.primary_stride, offset=offset_type)
+                    mapping_value['window_shape'] = entry_shape
+                    mapping_value['stride'] = entry_stride
+                log.info("Shape for %s shape: %s stride: %s", mapping_type, mapping_value["window_shape"], mapping_value["stride"])
+
         self._swap_axes = swap_axes
         self._postprocessing_callbacks = postprocessing_callbacks
         self._num_tiles = None
@@ -402,6 +417,20 @@ class DataGenerator(object):
             self.__output_generator_object = self._looping_output_generator()
         else:
             self.__output_generator_object = self._output_generator()
+
+    @property
+    def mapping_sizes(self):
+        input_sizes = {}
+        output_sizes = {}
+        input_mapping, output_mapping = self._mapping
+        for input_name, input_value in input_mapping.items():
+            input_sizes[input_name] = tuple(input_value["window_shape"]) + (len(input_value["channels"]), )
+        if output_mapping is not None:
+            for output_name, output_value in output_mapping.items():
+                output_sizes[output_name] = tuple(output_value["window_shape"]) + (len(output_value["channels"]), )
+
+        return (input_sizes, output_sizes)
+
 
     def _convert_mapping(self, endpoint, mapping, primary):
         new_mapping = {}

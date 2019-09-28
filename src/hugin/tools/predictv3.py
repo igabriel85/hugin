@@ -40,7 +40,7 @@ def predict_handlerv3(config, args):
             os.makedirs(output_dir)
         saver.destination = output_dir
 
-    saver.flow_from_source(dataset_loader, predictor)
+    saver.flow_prediction_from_source(dataset_loader, predictor)
 
 
 
