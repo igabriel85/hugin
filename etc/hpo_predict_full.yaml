@@ -15,6 +15,7 @@ models:
     path: /home/gabriel/experiments/s5/models/s5_train_selective_all_spacenet_loss.hdf5
     builder: hugin.models.unet.unetv14:unet_v2
     type: keras
+    loss: !!python/name:hugin.tools.utils.dice_loss
     window_size: [256, 256]
     stride_size: 50
     match_id: '.*'
