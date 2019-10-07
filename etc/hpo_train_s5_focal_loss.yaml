@@ -25,7 +25,7 @@ model:
   class_weights: !!python/list [0.20, 0.80]
   batch_size: 20
   model_path: "/home/gabriel/experiments/s5/models/{model_name}.hdf5"
-  loss: !!python/name:hugin.tools.utils.dice_loss
+  loss: !!python/name:hugin.tools.utils.focal_loss
   log: "/home/gabriel/experiments/s5/models/{model_name}.csv"
   early_stopping:
     monitor: val_loss
