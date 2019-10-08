@@ -108,7 +108,7 @@ def unet_v14(input_width=256,
     return model
 
 
-@custom_objects({'dice_coef': dice_coef, 'dice_loss':dice_loss, 'focal_loss': focal_loss()})
+@custom_objects({'dice_coef': dice_coef, 'dice_loss':dice_loss, 'focal_loss': focal_loss})
 def unet_v2(input_width=256,
             input_height=256,
             n_channels=3,
