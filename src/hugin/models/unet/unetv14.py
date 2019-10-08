@@ -20,7 +20,7 @@ from keras.layers.convolutional import Convolution2D, Convolution2DTranspose
 from keras.layers.normalization import BatchNormalization
 from keras.models import Model
 
-from hugin.tools.utils import custom_objects, dice_coef, dice_loss
+from hugin.tools.utils import custom_objects, dice_coef, dice_loss, focal_loss
 
 
 @custom_objects({'dice_coef': dice_coef})
@@ -108,7 +108,7 @@ def unet_v14(input_width=256,
     return model
 
 
-@custom_objects({'dice_coef': dice_coef, 'dice_loss':dice_loss})
+@custom_objects({'dice_coef': dice_coef, 'dice_loss':dice_loss, 'focal_loss': focal_loss()})
 def unet_v2(input_width=256,
             input_height=256,
             n_channels=3,
