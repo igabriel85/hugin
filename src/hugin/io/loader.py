@@ -159,7 +159,9 @@ class TileGenerator(object):
 
         window_width, window_height = target_shape
 
+        mapping_level_preprocessing = mapping.get('preprocessing', [])
         augmented_mapping = augment_mapping_with_datasets(dataset, mapping)
+
 
         image_height, image_width = augmented_mapping[0]["backing_store"].shape
 
@@ -210,7 +212,9 @@ class TileGenerator(object):
                         band = band / normalization_value
                     if transform_expression is not None:
                         raise NotImplementedError("Snuggs expressions are currently not implemented")
-                    for callback in preprocessing_callbacks:
+
+                    all_callbacks = mapping_level_preprocessing + preprocessing_callbacks
+                    for callback in all_callbacks:
                         band = callback(band)
 
                     if buffer is None:

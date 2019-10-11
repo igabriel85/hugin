@@ -81,9 +81,9 @@ class MultipleSceneModel:
                                             self.predictor.batch_size,
                                             inputs,
                                             target,
-                                            format_converter=None,
+                                            format_converter=self.format_converter,
                                             swap_axes=self.predictor.swap_axes,
-                                            postprocessing_callbacks=None,  # ???
+                                            postprocessing_callbacks=[],  # ???
                                             default_window_size=self.window_size,
                                             default_stride_size=self.stride_size)
             log.info("Validation data has %d tiles", len(validation_data))
@@ -91,8 +91,12 @@ class MultipleSceneModel:
             log.info("No validation data")
 
         options = {}
+        if self.predictor.destination is None:
+            self.predictor.destination = self.destination
+
         log.info("Running training from %s", trainer.predictor)
         self.predictor.fit_generator(train_data, validation_data, **options)
+        log.info("Training completed")
 
 class BaseSceneModel:
     def __init__(self, post_processors=None, metrics=None, gti_component=None):
@@ -128,6 +132,7 @@ class CoreScenePredictor(BaseSceneModel):
 
         instance_path = ".".join([self.__module__, self.__class__.__name__])
         self.name = "%s[%s]:%s" % (instance_path, name if name is not None else self.__hash__(), predictor.name)
+        self.model_name = name if name is not None else self.__hash__()
         self.stride_size = stride_size if stride_size is not None else self.predictor.input_shape[0]
         self.window_size = window_size
         if not mapping: raise TypeError("Missing `mapping` specification in %s" % self.name)
@@ -227,12 +232,20 @@ class RasterScenePredictor(CoreScenePredictor, MultipleSceneModel):
         MultipleSceneModel.__init__(self, scene_id_filter=scene_id_filter)
 
 class RasterSceneTrainer(CoreScenePredictor, MultipleSceneModel):
-    def __init__(self, model, *args, scene_id_filter=None, **kwargs):
+    def __init__(self, model, *args, destination=None, scene_id_filter=None, **kwargs):
         CoreScenePredictor.__init__(self, model, *args, **kwargs)
         MultipleSceneModel.__init__(self, scene_id_filter=scene_id_filter)
+        self.destination = destination
 
     def predict_scene_proba(self, scene, dataset_loader=None):
         raise NotImplementedError()
+
+    def save(self, destination=None):
+        destination = destination if destination is not None else self.destination
+        if not os.path.exists(destination):
+            os.makedirs(destination)
+        final_destination = os.path.join(destination, self.predictor.model_name)
+        self.predictor.save(final_destination)
 
 
 class BaseEnsembleScenePredictor(BaseSceneModel, MultipleSceneModel):

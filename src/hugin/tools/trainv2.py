@@ -12,7 +12,18 @@ log = logging.getLogger(__name__)
 def train_handler(config, args):
     input_dir = args.input_dir
     data_source = config["data_source"]
-    predictor = config["trainer"]
+    trainer = config["trainer"]
+    training_configuration = config["configuration"]
+
+
+
+    destination = training_configuration["model_path"]
+    keys = {
+        'name': trainer.model_name
+    }
+    destination = destination.format(**keys)
+    trainer.destination = destination
+
     if input_dir is not None:
         data_source.input_source = input_dir
 
@@ -25,4 +36,8 @@ def train_handler(config, args):
 
     dataset_loader.loop = True
     validation_loader.loop = True
-    predictor.train_scenes(dataset_loader, validation_scenes=validation_loader)
+    trainer.train_scenes(dataset_loader, validation_scenes=validation_loader)
+    log.info("Training completed")
+    log.info("Saving configuration to: %s", destination)
+    print (trainer)
+    trainer.save()
