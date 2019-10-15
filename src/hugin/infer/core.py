@@ -203,6 +203,7 @@ class KerasPredictor(RasterModel):
                  cpu_merge=True, #
                  cpu_relocation=False,
                  loss=None,
+                 loss_weights=None,
                  model_builder_options={},
                  epochs=1000,
                  verbose=1,
@@ -250,6 +251,7 @@ class KerasPredictor(RasterModel):
         self.initial_epoch = initial_epoch
         self.optimizer = optimizer
         self.loss = loss
+        self.loss_weights = loss_weights
 
         if model_builder:
             model_builder, model_builder_custom_options = import_model_builder(model_builder)
@@ -338,7 +340,7 @@ class KerasPredictor(RasterModel):
                                             cpu_merge=cpu_merge,
                                             cpu_relocation=cpu_relocation)
 
-            model.compile(self.optimizer, loss=self.loss)
+            model.compile(self.optimizer, loss=self.loss, loss_weights=self.loss_weights)
             print (model.summary())
 
 
@@ -363,7 +365,6 @@ class KerasPredictor(RasterModel):
                     os.makedirs(checkpoint_destination)
                 filepath = os.path.join(checkpoint_destination, filename)
                 log.info("Registering model checkpoing")
-                log.info("Model checkpoints will be directed to: ", checkpoint_destination)
                 callbacks.append(ModelCheckpoint(filepath=filepath, monitor=monitor, verbose=verbose,
                                                  save_best_only=save_best_only, save_weights_only=save_weights_only,
                                                  mode=mode, period=period))
