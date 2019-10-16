@@ -15,9 +15,9 @@ REQUIRED_PACKAGES = [
     'Fiona',
     'h5py',
     'backoff',
-    'matplotlib<3.1',
+    'matplotlib',
     'scikit-learn',
-    'imgaug'
+    'imgaug',
 ]
 
 def extra_files(directory):
