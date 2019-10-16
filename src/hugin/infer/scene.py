@@ -7,7 +7,7 @@ import numpy as np
 import rasterio
 
 from logging import getLogger
-from tempfile import TemporaryFile
+from tempfile import TemporaryFile, NamedTemporaryFile
 
 from hugin.infer.core import metric_processor
 from hugin.io.loader import CategoricalConverter as TrainingCategoricalConverter
@@ -263,7 +263,7 @@ class BaseEnsembleScenePredictor(BaseSceneModel, MultipleSceneModel):
             if predictor["predictor"].gti_component is None:
                 predictor["predictor"].gti_component = self.gti_component
         self.resume = resume
-        cache_file = cache_file if cache_file is not None else TemporaryFile("w+b")
+        cache_file = cache_file if cache_file is not None else NamedTemporaryFile("w+b").name
         self.cache = h5py.File(cache_file, 'a')
         self.metrics_store = {}
         log.info("Ensemble predictions stored in: %s", cache_file)

@@ -13,7 +13,7 @@ REQUIRED_PACKAGES = [
     'geopandas',
     'Shapely',
     'Fiona',
-    'h5py>=2.9',
+    'h5py',
     'backoff',
     'matplotlib',
     'scikit-learn',
