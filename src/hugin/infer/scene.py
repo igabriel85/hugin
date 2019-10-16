@@ -199,7 +199,7 @@ class CoreScenePredictor(BaseSceneModel):
             if merger is None:
                 merger = self.prediction_merger_class(output_height, output_width, prediction.shape[3],
                                                       prediction.dtype)
-            for i in range(0, in_arrays.shape[0]):
+            for i in range(0, prediction.shape[0]):
                 tile_prediction = prediction[i].reshape(
                     (window_height, window_width, prediction.shape[3]))
 
