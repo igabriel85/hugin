@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from hugin.tools.standardize import standardize_handler
 
 __license__ = \
     """Copyright 2019 West University of Timisoara
@@ -59,9 +58,6 @@ def main():
     parser_trainv2.add_argument('--config', required=True, type=argparse.FileType('r'), help="Path to configuration file")
     parser_trainv2.add_argument('--input-dir', required=False, default=None)
     parser_trainv2.set_defaults(func=train_handlerv2)
-
-    parser_standardize = subparsers.add_parser('standardize', help="Train standardize model")
-    parser_standardize.set_defaults(func=standardize_handler)
 
     parser_train = subparsers.add_parser('train', help='Train a model')
     parser_train.add_argument('--switch-to-prefix', action='store_true', default=False,
