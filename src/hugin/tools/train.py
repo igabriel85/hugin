@@ -179,6 +179,7 @@ def train_keras(model_name,
                                     mapping["target"],
                                     format_converter=format_converter,
                                     swap_axes=swap_axes,
+                                    postprocessing_callbacks=pre_callbacks,
                                     default_window_size=window_size,
                                     default_stride_size=stride_size)
 

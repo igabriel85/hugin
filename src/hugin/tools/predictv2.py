@@ -179,8 +179,8 @@ def predict_handler(config, args):
                     scaled_X = np.zeros((width, height, nr_bands))
                     for band in range(0, nr_bands):
                         scaled_X[:, :, band] = scale(X_val[:, :, band])
-                        print(scaled_X[:, :, band])
-                        print(X_val[:, :, band])
+                        # print(scaled_X[:, :, band])
+                        # print(X_val[:, :, band])
                     X_new = {"input_1": scaled_X}
 
                     return X_new, y
