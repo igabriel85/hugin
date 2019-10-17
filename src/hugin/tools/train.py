@@ -842,6 +842,10 @@ def train_handler(config, args):
             scaled_X = np.zeros((width, height, nr_bands))
             for band in range(0, nr_bands):
                 scaled_X[:, :, band] = scale(X_val[:, :, band])
+
+            # If gti values bigger than 1 replace with 1
+            if scaled_X.max() > 1:
+                scaled_X[scaled_X > 1] = 1
             X_new = {"input_1": scaled_X}
             return X_new, y
         pre_callbacks.append(scale_hack)
