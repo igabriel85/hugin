@@ -54,6 +54,7 @@ class MultipleSceneModel:
         inputs = self.mapping["inputs"]
         target = self.mapping["target"]
 
+        preprocessors = self.pre_processors if self.pre_processors else []
         validation_scenes = [] if validation_scenes is None else validation_scenes
         train_data = DataGenerator(scenes,
                                    self.predictor.batch_size,
@@ -61,7 +62,7 @@ class MultipleSceneModel:
                                    target,
                                    format_converter=self.format_converter,
                                    swap_axes=self.predictor.swap_axes,
-                                   postprocessing_callbacks=[], # ???
+                                   postprocessing_callbacks=preprocessors,
                                    default_window_size=self.window_size,
                                    default_stride_size=self.stride_size
                                    )
@@ -83,7 +84,7 @@ class MultipleSceneModel:
                                             target,
                                             format_converter=self.format_converter,
                                             swap_axes=self.predictor.swap_axes,
-                                            postprocessing_callbacks=[],  # ???
+                                            postprocessing_callbacks=preprocessors,
                                             default_window_size=self.window_size,
                                             default_stride_size=self.stride_size)
             log.info("Validation data has %d tiles", len(validation_data))
@@ -99,8 +100,9 @@ class MultipleSceneModel:
         log.info("Training completed")
 
 class BaseSceneModel:
-    def __init__(self, post_processors=None, metrics=None, gti_component=None):
+    def __init__(self, post_processors=None, pre_processors=None, metrics=None, gti_component=None):
         self.post_processors = post_processors
+        self.pre_processors = pre_processors
         self.metrics = metrics
         self.gti_component=gti_component
 
@@ -116,7 +118,8 @@ class CoreScenePredictor(BaseSceneModel):
                  window_size=None,
                  output_shape=None,
                  prediction_merger=NullMerger,
-                 post_processors=None,
+                 post_processors=None, # Run after we get the data form predictors
+                 pre_processors=None, # Run before sending the data to predictors
                  format_converter=TrainingCategoricalConverter(2),
                  metrics=None):
         """
@@ -127,7 +130,7 @@ class CoreScenePredictor(BaseSceneModel):
         :param stride_size: Stride size to be used by `predict_scene_proba`
         :param output_shape: Output shape of the prediction (Optional). Inferred from input image size
         """
-        BaseSceneModel.__init__(self, post_processors=post_processors, metrics=metrics)
+        BaseSceneModel.__init__(self, post_processors=post_processors, pre_processors=pre_processors, metrics=metrics)
         self.predictor = predictor
 
         instance_path = ".".join([self.__module__, self.__class__.__name__])
