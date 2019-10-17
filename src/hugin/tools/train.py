@@ -839,7 +839,7 @@ def train_handler(config, args):
             nr_bands = X_val.shape[-1]
             width = X_val.shape[0]
             height = X_val.shape[1]
-            scaled_X = np.zeros((width, height, 3))
+            scaled_X = np.zeros((width, height, nr_bands))
             for bands in range(0, nr_bands):
                 scaled_X[:, :, bands] = scale(X_val[:, :, bands])
             X_new = {"input_1": scaled_X}
