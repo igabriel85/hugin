@@ -840,11 +840,14 @@ def train_handler(config, args):
             width = X_val.shape[0]
             height = X_val.shape[1]
             scaled_X = np.zeros((width, height, nr_bands))
-            for bands in range(0, nr_bands):
-                scaled_X[:, :, bands] = scale(X_val[:, :, bands])
+            print(scaled_X.shape())
+            for band in range(0, nr_bands):
+                scaled_X[:, :, band] = scale(X_val[:, :, band])
+                print(scaled_X[:, :, band])
+                print(X_val[:, :, band])
+                sys.exit()
             X_new = {"input_1": scaled_X}
             return X_new, y
-
         pre_callbacks.append(scale_hack)
     log.info("Using %d training datasets", len(train_datasets))
     log.info("Using %d validation datasets", len(validation_datasets))
