@@ -33,6 +33,15 @@ from tempfile import NamedTemporaryFile, mkdtemp
 
 from hugin.tools.IOUtils import IOUtils
 
+import yaml
+
+try:
+    from yaml import CLoader as Loader
+    from yaml import CDumper as Dumper
+except ImportError:
+    from yaml import Loader as Loader
+    from yaml import Dumper as Dumper
+
 log = logging.getLogger(__name__)
 
 
@@ -52,11 +61,13 @@ class BaseLoader(object):
                  validation_percent=0,
                  prepend_path="",
                  rasterio_env={},
-                 cache_io=False,):
+                 cache_io=False,
+                 persist_file=None):
 
         if not data_pattern:
             raise ValueError("Missing Template")
 
+        self.persist_file = persist_file
         self._data_pattern = data_pattern
         self._re = re.compile(data_pattern)
         self._validation_source = validation_source
@@ -77,10 +88,27 @@ class BaseLoader(object):
         self._validation_datasets = OrderedDict()
 
         self._filter = filter
-        self.update_datasets()
-        if self._validation_source:
-            self.update_datasets(directory=self._validation_source, datasets=self._validation_datasets)
-        self.__update_split()
+
+        if self.persist_file and os.path.exists(self.persist_file):
+            log.info("Loading datasets from persistence file: %s", self.persist_file)
+            with open(self.persist_file, "r") as f:
+                data = yaml.load(f, Loader=Loader)
+                self._evaluation_list = data['evaluation']
+                self._train_list = data['training']
+        else:
+            self.update_datasets()
+            if self._validation_source:
+                self.update_datasets(directory=self._validation_source, datasets=self._validation_datasets)
+            self.__update_split()
+            # self._evaluation_list, self._train_list
+            if self.persist_file:
+                persist_data = {
+                    'evaluation': self._evaluation_list,
+                    'training': self._train_list
+                }
+                log.info("Persisting datasets to: %s", self.persist_file)
+                with open(self.persist_file, "w") as f:
+                    yaml.dump(persist_data, f, Dumper=Dumper)
 
     def __len__(self):
         return len(self._datasets)
