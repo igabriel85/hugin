@@ -155,6 +155,7 @@ class CoreScenePredictor(BaseSceneModel):
         log.info("Generating prediction representation")
         scene_id, scene_data = scene
         output_mapping = self.mapping.get("target", {})
+
         tile_loader = DatasetGenerator((scene,)) if dataset_loader is None else dataset_loader.get_dataset_loader(scene)
         tile_loader.reset()
         data_generator = DataGenerator(tile_loader,
@@ -178,50 +179,64 @@ class CoreScenePredictor(BaseSceneModel):
 
         output_shape = self.output_shape
         if output_shape:
-            output_height, output_width = output_shape
+            image_height, image_width = output_shape
         else:
-            output_height, output_width = data_generator.primary_scene.shape
+            image_height, image_width = data_generator.primary_scene.shape
 
-        window_height, window_width = output_window_shape
+        tile_height, tile_width = output_window_shape
+        window_width, window_height = tile_width, tile_height # ???
 
-        if window_width != self.stride_size:
-            num_horizontal_tiles = math.ceil((output_width - window_width) / float(self.stride_size) + 2)
+        if tile_width != self.stride_size:
+            xtiles = math.ceil((image_width - tile_width) / float(self.stride_size) + 2)
         else:
-            num_horizontal_tiles = math.ceil((output_width - window_width) / float(self.stride_size) + 1)
+            xtiles = math.ceil((image_width - tile_width) / float(self.stride_size) + 1)
 
-        x_offset = 0
-        y_offset = 0
+        if tile_height != self.stride_size:
+            ytiles = math.ceil((image_height - tile_height) / float(self.stride_size) + 2)
+        else:
+            ytiles = math.ceil((image_height - tile_height) / float(self.stride_size) + 1)
+
+
         merger = None
+        stride = self.stride_size
+        ytile = 0
 
-        for data in data_generator:
-            in_arrays, out_arrays = data
-            prediction = self.predictor.predict(in_arrays, batch_size=self.predictor.batch_size)
-            if merger is None:
-                merger = self.prediction_merger_class(output_height, output_width, prediction.shape[3],
-                                                      prediction.dtype)
-            for i in range(0, prediction.shape[0]):
-                tile_prediction = prediction[i].reshape(
-                    (window_height, window_width, prediction.shape[3]))
+        def prediction_generator(dgen):
+            for data in dgen:
+                in_arrays, out_arrays = data
+                prediction = self.predictor.predict(in_arrays, batch_size=self.predictor.batch_size)
+                for i in range(0, prediction.shape[0]):
+                    yield prediction[i]
 
-                xstart = x_offset * self.stride_size
-                xend = xstart + window_width
-                ystart = y_offset * self.stride_size
-                yend = ystart + window_height
+        predictions = prediction_generator(data_generator)
+        while ytile < ytiles:
+            y_start = ytile * stride
+            y_end = y_start + window_height
+            if y_end > image_height:
+                y_start = image_height - window_height
+            ytile += 1
+            xtile = 0
+            while xtile < xtiles:
+                x_start = xtile * stride
+                x_end = x_start + window_width
+                if x_end > image_width:
+                    x_start = image_width - window_width
+                xtile += 1
 
-                if xend > output_width:
-                    xstart = output_width - window_width
-                    xend = output_width
-                if yend > output_height:
-                    ystart = output_height - window_height
-                    yend = output_height
+                # Now we know the position
+                prediction = next(predictions)
+                tile_prediction = prediction.reshape(tile_height,
+                                                     tile_width,
+                                                     prediction.shape[-1])
+                if merger is None:
+                    merger = self.prediction_merger_class(image_height, image_width, prediction.shape[-1],
+                                                          prediction.dtype)
 
-                merger.update(xstart, xend, ystart, yend, tile_prediction)
+                merger.update(y_start, y_end, x_start, x_end, tile_prediction)
 
-                if x_offset == num_horizontal_tiles - 1:
-                    x_offset = 0
-                    y_offset += 1
-                else:
-                    x_offset += 1
+        if merger is None:
+            log.warning("No data merged in prediction")
+            return None
         prediction = merger.get_prediction()
         return prediction
 
