@@ -52,10 +52,10 @@ class Augmentation(object):
                 in_aug = {}
                 out_aug = {}
                 for k, v in input.items():
-                    input_aug = seq_det.augment_image(v.astype(np.uint8))
+                    input_aug = seq_det.augment_image(v)
                     in_aug[k] = input_aug
                 for k, v in gti.items():
-                    gti_aug = seq_det.augment_image(v.astype(np.uint8))
+                    gti_aug = seq_det.augment_image(v)
                     if np.amax(gti_aug) > 1:
                         gti_aug[gti_aug > 1] = 1
                     out_aug[k] = gti_aug
@@ -63,28 +63,28 @@ class Augmentation(object):
             else:
                 for k, v in input.items():
                     if len(v.shape) == 2:
-                        segmap_aug = seq_det.augment_image(v.astype(np.uint8))
+                        segmap_aug = seq_det.augment_image(v)
                         if np.amax(segmap_aug) > 1:
                             segmap_aug[segmap_aug > 1] = 1
                         aug[k] = segmap_aug
                     else:
-                        aug[k] = seq_det.augment_image(v.astype(np.uint8))
+                        aug[k] = seq_det.augment_image(v)
         elif isinstance(input, list):
             aug = []
             seq_det = seq.to_deterministic()
             for im in input:
                 print(im.shape)
                 if len(im.shape) == 2:
-                    seq_aug = seq_det.augment_image(im.astype(np.uint8))
+                    seq_aug = seq_det.augment_image(im)
                     if np.argmax(seq_aug) > 1:
                         seq_aug[seq_aug > 1] = 1
                     aug.append(seq_aug)
                 else:
-                    aug.append(seq_det.augment_image(im.astype(np.uint8)))
+                    aug.append(seq_det.augment_image(im))
         else:
             seq_det = seq.to_deterministic()
-            aug_img = seq_det.augment_image(input.astype(np.uint8))
-            aug_gti = seq_det.augment_image(gti.astype(np.uint8))
+            aug_img = seq_det.augment_image(input)
+            aug_gti = seq_det.augment_image(gti)
             aug_gti[aug_gti > 1] = 1
             aug = (aug_img, aug_gti)
         return aug
