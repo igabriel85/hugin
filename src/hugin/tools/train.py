@@ -835,6 +835,8 @@ def train_handler(config, args):
             from ..preprocessing.standardize import SkLearnStandardizer
             scale = SkLearnStandardizer(
                 '/data/syno1/sage-storage/users/marian/sn5/standardizer/raster_sk_standardizer_all/everything_pan_rgbnir/input_2')
+            print(X)
+            sys.exit()
             nr_bands = X.shape[-1]
             width = X.shape[0]
             height = X.shape[1]
