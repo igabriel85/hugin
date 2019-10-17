@@ -24,13 +24,17 @@ class MultipleSceneModel:
     This class is intended to be inherited by classes aimed to predict on multiple scenes
     """
 
-    def __init__(self, scene_id_filter=None):
+    def __init__(self,
+                 scene_id_filter=None,
+                 randomize_training=True):
         """
 
         :param scene_id_filter: Regex for filtering scenes according to their id (optional)
+        :param randomize_training: Randomize list of traning data between epochs
         """
 
         self.scene_id_filter = None if not scene_id_filter else re.compile(scene_id_filter)
+        self.randomize_training = randomize_training
 
     def predict_scenes_proba(self, scenes, predictor=None):
         """Run the predictor on all input scenes
@@ -53,9 +57,9 @@ class MultipleSceneModel:
 
         inputs = self.mapping["inputs"]
         target = self.mapping["target"]
-
         preprocessors = self.pre_processors if self.pre_processors else []
         validation_scenes = [] if validation_scenes is None else validation_scenes
+        scenes.randomise_on_loop = self.randomize_training
         train_data = DataGenerator(scenes,
                                    self.predictor.batch_size,
                                    inputs,

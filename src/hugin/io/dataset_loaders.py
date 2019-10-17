@@ -268,12 +268,13 @@ class FileSystemLoader(BaseLoader):
                     self.remove_dataset_by_id(dataset_id)
 
 class DatasetGenerator(object):
-    def __init__(self, datasets, loop=False, rasterio_env={}, _cache_data=False, _delete_temporary_cache=True):
+    def __init__(self, datasets, loop=False, randomise_on_loop=True, rasterio_env={}, _cache_data=False, _delete_temporary_cache=True):
         self._datasets = datasets
         self.rasterio_env = rasterio_env
         self._curent_position = 0
         self.loop = loop
         self._cache_data = _cache_data
+        self.randomise_on_loop = randomise_on_loop # Reshuffle data after loop
         if self._cache_data:
             self._temp_dir = mkdtemp("cache", "hugin")
 
@@ -315,6 +316,8 @@ class DatasetGenerator(object):
             raise StopIteration()
         if self._curent_position == length:
             if self._loop:
+                if self.randomise_on_loop:
+                    random.shuffle(self._datasets)
                 self.reset()
             else:
                 raise StopIteration()
