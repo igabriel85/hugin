@@ -839,14 +839,11 @@ def train_handler(config, args):
             nr_bands = X_val.shape[-1]
             width = X_val.shape[0]
             height = X_val.shape[1]
-            print(width, height)
             scaled_X = np.zeros((width, height, nr_bands))
-            print(scaled_X.shape)
             for band in range(0, nr_bands):
                 scaled_X[:, :, band] = scale(X_val[:, :, band])
-                print(scaled_X[:, :, band])
-                print(X_val[:, :, band])
-                sys.exit()
+
+            print(scaled_X.shape)
             X_new = {"input_1": scaled_X}
             return X_new, y
         pre_callbacks.append(scale_hack)
