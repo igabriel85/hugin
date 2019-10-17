@@ -35,8 +35,9 @@ except ImportError:
 
 
 class Augmentation(object):
-    def __init__(self, arg=None):
-        self.arg = arg
+    def __init__(self, operators=None, random_order=False):
+        self.operators = operators
+        self.random_order = random_order
         self.mod_name = 'imgaug.augmenters'
 
     def __call__(self, input, gti=None):
@@ -89,7 +90,7 @@ class Augmentation(object):
         return aug
 
     def _sequencer(self):
-        op = self.arg['augment']['operators']
+        op = self.operators
         operators = []
         if 'Fliplr' in op:
             operators.append(iaa.Fliplr(op.get('Fliplr', 0.25)))
@@ -142,15 +143,13 @@ class Augmentation(object):
                                            iaa.Multiply(op['Multiply']['percent'],
                                                         per_channel=op['Multiply']['per_channel']),
                                            deterministic=True))
-        # if 'custom' in self.arg['augment']:
-        #     return 0
 
-        seq = iaa.Sequential(operators, random_order=self.arg['augment']['random_order'])
+        seq = iaa.Sequential(operators, random_order=self.random_order)
 
         return seq
 
     def _sequencerv2(self):
-        op = self.arg['augment']['operators']
+        op = self.operators
         mod = importlib.import_module(self.mod_name)
         operators = []
         for k, v in op.items():
@@ -178,7 +177,7 @@ class Augmentation(object):
                 except Exception as inst:
                     log.error("Operator {} failed to instantiate with {} and {}".format(k, type(inst), inst.args))
                     sys.exit()
-        seq = iaa.Sequential(operators, random_order=self.arg['augment']['random_order'])
+        seq = iaa.Sequential(operators, random_order=self.random_order)
         return seq
 
     def legacy_aug(X,
