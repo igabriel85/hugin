@@ -191,7 +191,7 @@ def predict_handler(config, args):
                                            input_mapping=input_mapping,
                                            output_mapping=None,
                                            swap_axes=swap_axes,
-                                           # postprocessing_callbacks=pre_callbacks,
+                                           postprocessing_callbacks=pre_callbacks,
                                            loop=False,
                                            default_window_size=window_size,
                                            default_stride_size=stride_size)
