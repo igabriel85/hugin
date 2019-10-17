@@ -351,7 +351,7 @@ class KerasPredictor(RasterModel):
 
         if self.checkpoint:
             if not self.destination:
-                log.warning("Destination not specifyied. Checkpoints will not be saved")
+                log.warning("Destination not specified. Checkpoints will not be saved")
             else:
                 monitor = self.checkpoint.get('monitor', 'val_loss')
                 verbose = self.checkpoint.get('verbose', 0)
