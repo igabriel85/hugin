@@ -826,9 +826,24 @@ def train_handler(config, args):
             from ..preprocessing.augmentation import Augmentation
             aug = Augmentation(config)
             return aug.augment(X, y)
-
         pre_callbacks.append(augment_callback)
 
+    # Ugly hack for scaling
+    scale = True
+    if scale:
+        def scale_hack(X, y):
+            from ..preprocessing.standardize import SkLearnStandardizer
+            scale = SkLearnStandardizer(
+                '/data/syno1/sage-storage/users/marian/sn5/standardizer/raster_sk_standardizer_all/everything_pan_rgbnir/input_2')
+            nr_bands = X.shape[-1]
+            width = X.shape[0]
+            height = X.shape[1]
+            scaled_X = np.zeros((width, height, 3))
+            for bands in range(0, nr_bands):
+                scaled_X[:, :, bands] = scale(X[:, :, bands])
+            return scaled_X, y
+
+        pre_callbacks.append(scale_hack)
     log.info("Using %d training datasets", len(train_datasets))
     log.info("Using %d validation datasets", len(validation_datasets))
 
