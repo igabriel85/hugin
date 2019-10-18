@@ -550,9 +550,11 @@ class DataGenerator(object):
                     count = 0
 
         if count > 0:
+            in_arrays = {}
             for k, v in input_data.items():
                 subset = v[:count,:,:]
                 in_arrays[k] = subset if not self._copy else subset.copy()
+            out_arrays = {}
             for k, v in output_data.items():
                 subset = v[:count, :, :]
                 out_arrays[k] = subset if not self._copy else subset.copy()

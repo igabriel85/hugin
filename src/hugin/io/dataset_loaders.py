@@ -269,7 +269,7 @@ class FileSystemLoader(BaseLoader):
 
 class DatasetGenerator(object):
     def __init__(self, datasets, loop=False, randomise_on_loop=True, rasterio_env={}, _cache_data=False, _delete_temporary_cache=True):
-        self._datasets = datasets
+        self._datasets = list(datasets)
         self.rasterio_env = rasterio_env
         self._curent_position = 0
         self.loop = loop

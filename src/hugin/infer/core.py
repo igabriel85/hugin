@@ -218,6 +218,7 @@ class KerasPredictor(RasterModel):
                  steps_per_epoch=None,
                  validation_steps_per_epoch=None,
                  load_only_weights=False,
+                 metrics=None,
                  input_shape=None,
                  custom_objects={},
                  **kwargs):
@@ -252,6 +253,7 @@ class KerasPredictor(RasterModel):
         self.optimizer = optimizer
         self.loss = loss
         self.loss_weights = loss_weights
+        self.keras_metrics = metrics
 
         if model_builder:
             model_builder, model_builder_custom_options = import_model_builder(model_builder)
@@ -340,7 +342,11 @@ class KerasPredictor(RasterModel):
                                             cpu_merge=cpu_merge,
                                             cpu_relocation=cpu_relocation)
 
-            model.compile(self.optimizer, loss=self.loss, loss_weights=self.loss_weights)
+            model.compile(self.optimizer,
+                          loss=self.loss,
+                          loss_weights=self.loss_weights,
+                          metrics=self.keras_metrics
+                          )
             print (model.summary())
 
 
@@ -359,7 +365,7 @@ class KerasPredictor(RasterModel):
                 save_weights_only = self.checkpoint.get('save_weights_only', False)
                 mode = self.checkpoint.get('mode', 'auto')
                 period = self.checkpoint.get('period', 1)
-                filename = self.checkpoint.get('filename', "{epoch:02d}-{val_loss:.2f}.hdf5")
+                filename = self.checkpoint.get('filename', "checkpoint-{epoch:03d}-{val_loss:.4f}.hdf5")
                 checkpoint_destination = os.path.join(self.destination, "checkpoints")
                 if not os.path.exists(checkpoint_destination):
                     os.makedirs(checkpoint_destination)
