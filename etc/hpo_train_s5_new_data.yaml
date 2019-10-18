@@ -4,9 +4,9 @@ data_source: !!python/object/apply:hugin.io.FileSystemLoader
     data_pattern: '(?P<category>[0-9A-Za-z_]+)_AOI_(?P<location>\d+_[A-Za-z0-9]+)_(?P<type>[a-zA-Z]+)_(?P<idx>[a-zA-Z0-9]+)(?P<gti>_GTI)?.tif$'
     id_format: '{location}-{idx}'
     type_format: '{type}{gti}'
-    input_source: /data/syno1/sage-storage/Spacenet_5/nfs/data/cosmiq/spacenet/competitions/SN5_roads/tiles_upload/train/AOI_7_Moscow/
+    input_source: /data/syno1/sage-storage/Spacenet_5/nfs/data/cosmiq/spacenet/competitions/SN5_roads/tiles_upload/train/
     validation_percent: 0.20
-dataset_cache: /home/gabriel/experiments/s5/cache_train_m_spacenet.yaml
+dataset_cache: /home/gabriel/experiments/s5/cache_train_all_spacenet.yaml
 max_number_images: 4
 window_size: [ 256, 256 ]
 stride_size: 100
