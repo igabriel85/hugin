@@ -830,7 +830,7 @@ def train_handler(config, args):
         pre_callbacks.append(augment_callback)
 
     # Ugly hack for scaling
-    scale = True
+    scale = False
     if scale:
         def scale_hack(X, y):
             from ..preprocessing.standardize import SkLearnStandardizer
