@@ -286,7 +286,7 @@ class BaseEnsembleScenePredictor(BaseSceneModel, MultipleSceneModel):
                 predictor["predictor"].gti_component = self.gti_component
         self.resume = resume
         cache_file = cache_file if cache_file is not None else NamedTemporaryFile("w+b").name
-        self.cache = h5py.File(cache_file, 'w')
+        self.cache = h5py.File(cache_file, 'a')
         self.metrics_store = {}
         log.info("Ensemble predictions stored in: %s", cache_file)
 
@@ -300,9 +300,13 @@ class BaseEnsembleScenePredictor(BaseSceneModel, MultipleSceneModel):
             for scene_id, _, result in super(BaseEnsembleScenePredictor, self).predict_scenes_proba(scenes, predictor):
                 prediction, metrics = result
                 dataset_name = "%s/%s" % (predictor.name, scene_id)
-                if self.resume and dataset_name in self.cache.keys():
-                    log.info("Scene %s already predicted using %s. Skipping!", dataset_name, predictor.name)
-                    continue
+                if self.resume:
+                    if dataset_name in self.cache.keys():
+                        log.info("Scene %s already predicted using %s. Skipping!", dataset_name, predictor.name)
+                        continue
+                else:
+                    if dataset_name in self.cache.keys():
+                        del self.cache[dataset_name]
                 log.debug("Storing prediction for %s under %s", scene_id, dataset_name)
                 self.cache[dataset_name] = prediction
 
