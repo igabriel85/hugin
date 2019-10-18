@@ -166,7 +166,7 @@ def predict_handler(config, args):
             tile_loader.reset()
             pre_callbacks = []
             # Ugly hack for scaling
-            scale = True
+            scale = False
             if scale:
                 def scale_hack(X, y):
                     from ..preprocessing.standardize import SkLearnStandardizer
