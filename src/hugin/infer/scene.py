@@ -311,15 +311,15 @@ class BaseEnsembleScenePredictor(BaseSceneModel, MultipleSceneModel):
                 self.cache[dataset_name] = prediction
 
                 metrics_store[scene_id] = metrics
-                print("Metrics from predict: %s", metrics)
+                #print("Metrics from predict: %s", metrics)
         scenes.reset()
         for scene in scenes:
             scene_id, scene_data = scene
             log.debug("Ensembling prediction for %s", scene_id)
             result = self.predict_scene_proba(scene)
             prediction, metrics = result
-            print ("predict_scenes_proba => ", metrics)
-            print ("predict_scenes_proba => ", self.metrics_store[scene_id])
+            #print ("predict_scenes_proba => ", metrics)
+            #print ("predict_scenes_proba => ", self.metrics_store[scene_id])
             scene_metrics = {}
             scene_metrics.update(metrics)
             scene_metrics.update(self.metrics_store[scene_id])
@@ -375,7 +375,7 @@ class SceneExporter(object):
             self.save_scene(scene_id, scene_data, prediction)
             overall_metrics[scene_id] = metrics
         import json
-        print (json.dumps(overall_metrics, indent=4))
+        #print (json.dumps(overall_metrics, indent=4))
             #print (metrics)
 
 
