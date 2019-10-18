@@ -1,12 +1,12 @@
 model_name: s5_train_new_data # Name of the model
 data_source: !!python/object/apply:hugin.io.FileSystemLoader
   kwds:
-    data_pattern: '(?P<category>[0-9A-Za-z_]+)_AOI_(?P<location>\d+(_[A-Za-z0-9]+)+)_(?P<type>(PS-MS|PS-RGB|MS|PAN))_(?P<idx>chip373)(?P<gti>_GTI)?.(?P<extension>(tif|tiff|png|jpg|jp2))$'
+    data_pattern: '(?P<category>[0-9A-Za-z_]+)_AOI_(?P<location>\d+_[A-Za-z0-9]+)_(?P<type>[a-zA-Z]+)_(?P<idx>[a-zA-Z0-9]+)(?P<gti>_GTI)?.tif$'
     id_format: '{location}-{idx}'
     type_format: '{type}{gti}'
     input_source: /data/syno1/sage-storage/Spacenet_5/all
     validation_percent: 0.20
-dataset_cache: /home/gabriel/experiments/s5/cache_train_all_spacenet_new_2.yaml
+dataset_cache: /home/gabriel/experiments/s5/cache_train_all_spacenet_new.yaml
 max_number_images: 4
 window_size: [ 256, 256 ]
 stride_size: 100
