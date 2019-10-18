@@ -165,27 +165,27 @@ def predict_handler(config, args):
 
             tile_loader.reset()
             # Ugly hack for scaling
-            scale = True
-            pre_callbacks = []
-            if scale:
-                def scale_hack(X, y):
-                    from ..preprocessing.standardize import SkLearnStandardizer
-                    scale = SkLearnStandardizer(
-                        '/data/syno1/sage-storage/users/marian/sn5/standardizer/raster_sk_standardizer_all/everything_pan_rgbnir/input_2')
-                    X_val = X['input_1']
-                    nr_bands = X_val.shape[-1]
-                    width = X_val.shape[0]
-                    height = X_val.shape[1]
-                    scaled_X = np.zeros((width, height, nr_bands))
-                    for band in range(0, nr_bands):
-                        scaled_X[:, :, band] = scale(X_val[:, :, band])
-                        # print(scaled_X[:, :, band])
-                        # print(X_val[:, :, band])
-                    X_new = {"input_1": scaled_X}
-
-                    return X_new, y
-
-                pre_callbacks.append(scale_hack)
+            # scale = True
+            # pre_callbacks = []
+            # if scale:
+            #     def scale_hack(X, y):
+            #         from ..preprocessing.standardize import SkLearnStandardizer
+            #         scale = SkLearnStandardizer(
+            #             '/data/syno1/sage-storage/users/marian/sn5/standardizer/raster_sk_standardizer_all/everything_pan_rgbnir/input_2')
+            #         X_val = X['input_1']
+            #         nr_bands = X_val.shape[-1]
+            #         width = X_val.shape[0]
+            #         height = X_val.shape[1]
+            #         scaled_X = np.zeros((width, height, nr_bands))
+            #         for band in range(0, nr_bands):
+            #             scaled_X[:, :, band] = scale(X_val[:, :, band])
+            #             # print(scaled_X[:, :, band])
+            #             # print(X_val[:, :, band])
+            #         X_new = {"input_1": scaled_X}
+            #
+            #         return X_new, y
+            #
+            #     pre_callbacks.append(scale_hack)
             data_generator = DataGenerator(tile_loader,
                                            batch_size=batch_size,
                                            input_mapping=input_mapping,
