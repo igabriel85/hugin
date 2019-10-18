@@ -286,7 +286,7 @@ class BaseEnsembleScenePredictor(BaseSceneModel, MultipleSceneModel):
                 predictor["predictor"].gti_component = self.gti_component
         self.resume = resume
         cache_file = cache_file if cache_file is not None else NamedTemporaryFile("w+b").name
-        self.cache = h5py.File(cache_file, 'a')
+        self.cache = h5py.File(cache_file, 'w')
         self.metrics_store = {}
         log.info("Ensemble predictions stored in: %s", cache_file)
 
