@@ -19,10 +19,10 @@ model_type: keras
 #      path: /data/syno1/sage-storage/users/marian/sn5/standardizer/raster_sk_standardizer_all/everything_pan_rgbnir/input_2
 mapping:
   inputs:
-    - [ "MS", 1 ]
-    - [ "MS", 5 ]
-    - [ "MS", 4 ]
-    - [ "MS", 8 ]
+    - [ "MSNone", 1 ]
+    - [ "MSNone", 5 ]
+    - [ "MSNone", 4 ]
+    - [ "MSNone", 8 ]
   target:
     - [ "MS_GTI", 1 ]
 model:
