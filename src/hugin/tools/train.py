@@ -830,26 +830,26 @@ def train_handler(config, args):
         pre_callbacks.append(augment_callback)
 
     # Ugly hack for scaling
-    scale = False
-    if scale:
-        def scale_hack(X, y):
-            from ..preprocessing.standardize import SkLearnStandardizer
-            scale = SkLearnStandardizer(
-                '/data/syno1/sage-storage/users/marian/sn5/standardizer/raster_sk_standardizer_all/everything_pan_rgbnir/input_2')
-            X_val = X['input_1']
-            nr_bands = X_val.shape[-1]
-            width = X_val.shape[0]
-            height = X_val.shape[1]
-            scaled_X = np.zeros((width, height, nr_bands))
-            for band in range(0, nr_bands):
-                scaled_X[:, :, band] = scale(X_val[:, :, band])
-
-            # If gti values bigger than 1 replace with 1
-            if scaled_X.max() > 1:
-                scaled_X[scaled_X > 1] = 1
-            X_new = {"input_1": scaled_X}
-            return X_new, y
-        pre_callbacks.append(scale_hack)
+    # scale = False
+    # if scale:
+    #     def scale_hack(X, y):
+    #         from ..preprocessing.standardize import SkLearnStandardizer
+    #         scale = SkLearnStandardizer(
+    #             '/data/syno1/sage-storage/users/marian/sn5/standardizer/raster_sk_standardizer_all/everything_pan_rgbnir/input_2')
+    #         X_val = X['input_1']
+    #         nr_bands = X_val.shape[-1]
+    #         width = X_val.shape[0]
+    #         height = X_val.shape[1]
+    #         scaled_X = np.zeros((width, height, nr_bands))
+    #         for band in range(0, nr_bands):
+    #             scaled_X[:, :, band] = scale(X_val[:, :, band])
+    #
+    #         # If gti values bigger than 1 replace with 1
+    #         if scaled_X.max() > 1:
+    #             scaled_X[scaled_X > 1] = 1
+    #         X_new = {"input_1": scaled_X}
+    #         return X_new, y
+    #     pre_callbacks.append(scale_hack)
     log.info("Using %d training datasets", len(train_datasets))
     log.info("Using %d validation datasets", len(validation_datasets))
 
