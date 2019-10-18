@@ -147,7 +147,7 @@ class AverageMerger(PredictionMerger):
         tile_array = self.tile_array.copy()
         channels = tile_array.shape[-1]
         unique, counts = np.unique(self.tile_freq_array, return_counts=True)
-        print(dict(zip(unique, counts)))
+        #print(dict(zip(unique, counts)))
         for i in range(0, channels):
             tile_array[:, :, i] = tile_array[:, :, i] / self.tile_freq_array
         return tile_array
