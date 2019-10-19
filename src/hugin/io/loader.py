@@ -390,7 +390,6 @@ class DataGenerator(object):
         if 'stride' not in primary_mapping:
             primary_mapping['stride'] = self.primary_stride
 
-        log.info("Primary sliding window: %s stride: %s", self.primary_window_shape, self.primary_stride)
         self._mapping = (input_mapping, output_mapping)
 
         for entry in self._mapping:
@@ -405,7 +404,6 @@ class DataGenerator(object):
                     entry_shape, entry_stride = adapt_shape_and_stride(current_scene, self.primary_scene, self.primary_window_shape, self.primary_stride, offset=offset_type)
                     mapping_value['window_shape'] = entry_shape
                     mapping_value['stride'] = entry_stride
-                log.info("Shape for %s shape: %s stride: %s", mapping_type, mapping_value["window_shape"], mapping_value["stride"])
 
         self._swap_axes = swap_axes
         self._postprocessing_callbacks = postprocessing_callbacks
