@@ -208,7 +208,6 @@ class KerasPredictor(RasterModel):
                  epochs=1000,
                  verbose=1,
                  callbacks=None,
-                 validation_freq=1,
                  class_weight=None,
                  max_queue_size=10,
                  workers=1,
@@ -243,7 +242,6 @@ class KerasPredictor(RasterModel):
         self.epochs = epochs
         self.verbose = verbose
         self.callbacks = [] if not callbacks else callbacks
-        self.validation_freq = validation_freq
         self.class_weight = class_weight
         self.max_queue_size = max_queue_size
         self.workers = workers
@@ -384,7 +382,6 @@ class KerasPredictor(RasterModel):
                             callbacks=callbacks,
                             validation_data=validation_data,
                             validation_steps=validation_steps_per_epoch,
-                            validation_freq=self.validation_freq,
                             class_weight=self.class_weight,
                             max_queue_size=self.max_queue_size,
                             workers=self.workers,
