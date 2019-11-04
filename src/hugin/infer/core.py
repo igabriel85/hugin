@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 
 log = getLogger(__name__)
 
+
 def metric_processor(func):
     def __metric_handler(self, scene, *args, **kwargs):
         metrics = kwargs.pop('_metrics', {})
@@ -27,6 +28,8 @@ def metric_processor(func):
         return (original_result, metrics)
 
     return __metric_handler
+
+
 def postprocessor(func):
     def __postprocessor_handler(self, *args, **kwargs):
         kwargs.pop("_metrics", None)
@@ -55,10 +58,13 @@ def postprocessor(func):
         else:
             log.debug("No valid post-processors found for: %s", self)
             return result
+
     return __postprocessor_handler
+
 
 def identity_processor(arg):
     return arg
+
 
 class CategoricalConverter(object):
     def __init__(self, num_classes):
@@ -76,8 +82,8 @@ class RasterModel(object):
                  swap_axes=True,
                  input_shapes=None,
                  output_shapes=None,
-                 #input_shape=None,
-                 #output_shape=None
+                 # input_shape=None,
+                 # output_shape=None
                  ):
         """Base model object handling prediction
 
@@ -94,8 +100,8 @@ class RasterModel(object):
         self.swap_axes = swap_axes
         self.input_shapes = input_shapes
         self.output_shapes = output_shapes
-        #self.input_shape = input_shape
-        #self.output_shape = output_shape
+        # self.input_shape = input_shape
+        # self.output_shape = output_shape
 
     def predict(self, batch):
         """Runs the predictor on the input tile batch
@@ -106,6 +112,9 @@ class RasterModel(object):
         raise NotImplementedError()
 
     def save(self, destination=None):
+        raise NotImplementedError()
+
+    def fit_generator(self, train_data, validation_data=None):
         raise NotImplementedError()
 
 
@@ -142,7 +151,7 @@ class AverageMerger(PredictionMerger):
         tile_array = self.tile_array.copy()
         channels = tile_array.shape[-1]
         unique, counts = np.unique(self.tile_freq_array, return_counts=True)
-        #print(dict(zip(unique, counts)))
+        # print(dict(zip(unique, counts)))
         for i in range(0, channels):
             tile_array[:, :, i] = tile_array[:, :, i] / self.tile_freq_array
         return tile_array
@@ -169,7 +178,8 @@ class SkLearnStandardizer(RasterModel):
                 train_tile = tile[0]
                 for inp_name, inp_value in train_tile.items():
                     if inp_name not in self.scalers:
-                        self.scalers[inp_name] = StandardScaler(copy=self.copy, with_std=self.with_std, with_mean=self.with_mean)
+                        self.scalers[inp_name] = StandardScaler(copy=self.copy, with_std=self.with_std,
+                                                                with_mean=self.with_mean)
                     scaler = self.scalers[inp_name]
                     data = inp_value.ravel()
                     inp = data.reshape((data.shape + (1,)))
@@ -184,6 +194,25 @@ class SkLearnStandardizer(RasterModel):
             outs = pickle.dumps(scaler)
             with open(scaler_destination, "wb") as f:
                 f.write(outs)
+
+
+class IdentityModel(RasterModel):
+    def __init__(self, *args, num_loops=1, **kwargs):
+        RasterModel.__init__(self, *args, **kwargs)
+        self.destination = None
+        self.num_loops = num_loops
+
+    def fit_generator(self, train_data, validation_data=None):
+        for i in range(self.num_loops):
+            tdata = len(train_data)
+            vdata = len(validation_data) if validation_data is not None else 0
+            for j in range(0, tdata):
+                data = next(train_data)
+            for j in range(0, vdata):
+                data = next(validation_data)
+
+    def save(self, destination=None):
+        pass
 
 
 def identity_metric(prediction, gti):

@@ -2,13 +2,10 @@ import os
 from tempfile import NamedTemporaryFile
 
 import pytest
-from keras.callbacks import EarlyStopping
-from keras.optimizers import Adam
 
-from hugin.infer.keras import KerasModel
+from hugin.infer.core import IdentityModel
 from hugin.infer.scene import RasterSceneTrainer
 from hugin.io.loader import BinaryCategoricalConverter
-from tests import runningInCI
 from tests.conftest import generate_filesystem_loader
 
 
@@ -44,26 +41,13 @@ def test_keras_train_complete_flow(generated_filesystem_loader, small_generated_
     with NamedTemporaryFile(delete=False) as named_temporary_file:
         named_tmp = named_temporary_file.name
         os.remove(named_temporary_file.name)
-        keras_model = KerasModel(
-            name='test_keras_trainer',
-            model_path=named_temporary_file.name,
-            model_builder="hugin.models.unet.unetv14:unet_v14",
-            batch_size=10,
-            epochs=1,
-            metrics=[
-                "accuracy"
-            ],
-            loss="categorical_crossentropy",
-            optimizer=Adam(),
-            callbacks=[
-                EarlyStopping(monitor='loss')
-            ]
-        )
+        identity_model = IdentityModel(name="dummy_identity_model", num_loops=3)
         trainer = RasterSceneTrainer(name="test_raster_trainer",
                                      stride_size=256,
                                      window_size=(256, 256),
-                                     model=keras_model,
-                                     mapping=mapping)
+                                     model=identity_model,
+                                     mapping=mapping,
+                                     destination=named_tmp)
 
         dataset_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
         loop_dataset_loader_old = dataset_loader.loop
@@ -78,8 +62,8 @@ def test_keras_train_complete_flow(generated_filesystem_loader, small_generated_
             trainer.train_scenes(dataset_loader, validation_scenes=validation_loader)
             trainer.save()
 
-            assert os.path.exists(named_tmp.name)
-            assert os.path.getsize(named_tmp.name) > 0
+            assert os.path.exists(named_tmp)
+            assert os.path.getsize(named_tmp) > 0
         finally:
             dataset_loader.loop = loop_dataset_loader_old
             validation_loader.loop = loop_validation_loader_old
