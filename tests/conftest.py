@@ -9,19 +9,13 @@ import os
 
 import random
 
-@pytest.fixture
-def generated_filesystem_loader():
-    width = 2131
-    height = 1979
-    size = 35
+def generate_filesystem_loader(width=2131, height=1979, size=35, num_images=10):
     tempdir = TemporaryDirectory("-hugin")
     random.seed(42)
 
     match_color = "red"
 
-    NUM_IMAGES = 10
-
-    for imgidx in range(0, NUM_IMAGES):
+    for imgidx in range(0, num_images):
         data = np.zeros((height, width, 3), dtype=np.uint8)
         data_mask = np.zeros((height, width), dtype=np.uint8)
         im = Image.fromarray(data)
@@ -101,3 +95,6 @@ def generated_filesystem_loader():
 
     return loader
 
+@pytest.fixture
+def generated_filesystem_loader():
+    return generate_filesystem_loader(num_images=10)
