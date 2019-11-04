@@ -152,7 +152,6 @@ class TestDatasetGenerator(object):
 
 
 class TestDataGenerator(object):
-
     @pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
     def test_number_of_tiles(self, generated_filesystem_loader):
         training_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
@@ -197,14 +196,13 @@ class TestDataGenerator(object):
                                        }
                                    })
 
-        assert len(train_data) == 120
-        assert len(validation_data) == 80
-        import time
+        assert len(train_data) == 160
+        assert len(validation_data) == 40
         for i in range(len(train_data)):
-            print (i, time.time())
             tile =  next(train_data)
 
 
+    @pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
     def test_number_of_tiles_clasic(self, generated_filesystem_loader):
         training_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
         training_loader.loop = True
@@ -223,6 +221,8 @@ class TestDataGenerator(object):
 
 
         assert len(train_data) == 576
+        for i in range(len(train_data)):
+            tile = next(train_data)
 
 
     # def test_image_reassembly(self, generated_filesystem_loader):
