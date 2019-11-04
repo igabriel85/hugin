@@ -5,14 +5,19 @@ import pytest
 from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
 
-from hugin.infer.core import KerasPredictor
+from hugin.infer.keras import KerasPredictor
 from hugin.infer.scene import RasterSceneTrainer
 from hugin.io.loader import BinaryCategoricalConverter
 from tests import runningInCI
+from tests.conftest import generate_filesystem_loader
 
 
-@pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
-def test_keras_train_complete_flow(generated_filesystem_loader):
+@pytest.fixture
+def small_generated_filesystem_loader():
+    return generate_filesystem_loader(num_images=4, width=500, height=510)
+
+#@pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
+def test_keras_train_complete_flow(generated_filesystem_loader, small_generated_filesystem_loader):
     mapping = {
         'inputs': {
             'input_1': {
@@ -66,7 +71,7 @@ def test_keras_train_complete_flow(generated_filesystem_loader):
 
         try:
             dataset_loader.loop = True
-            loop_validation_loader_old.loop = True
+            validation_loader.loop = True
             print("Training on %d datasets" % len(dataset_loader))
             print("Using %d datasets for validation" % len(validation_loader))
 
