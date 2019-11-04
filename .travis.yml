@@ -27,4 +27,4 @@ install:
   - $PIP_CMD install --upgrade pip
   - $PIP_CMD install -r requirements.txt
   - $PIP_CMD install .
-script: $PYTHON -m pytest
+script: $PYTHON -m pytest -v -s
