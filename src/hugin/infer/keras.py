@@ -11,7 +11,7 @@ from hugin.tools.utils import import_model_builder
 log = getLogger(__name__)
 
 
-class KerasPredictor(RasterModel):
+class KerasModel(RasterModel):
     def __init__(self,
                  model_path,
                  model_builder,

@@ -5,7 +5,7 @@ import pytest
 from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
 
-from hugin.infer.keras import KerasPredictor
+from hugin.infer.keras import KerasModel
 from hugin.infer.scene import RasterSceneTrainer
 from hugin.io.loader import BinaryCategoricalConverter
 from tests import runningInCI
@@ -44,7 +44,7 @@ def test_keras_train_complete_flow(generated_filesystem_loader, small_generated_
     with NamedTemporaryFile(delete=False) as named_temporary_file:
         named_tmp = named_temporary_file.name
         os.remove(named_temporary_file.name)
-        keras_model = KerasPredictor(
+        keras_model = KerasModel(
             name='test_keras_trainer',
             model_path=named_temporary_file.name,
             model_builder="hugin.models.unet.unetv14:unet_v14",
