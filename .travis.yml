@@ -1,9 +1,9 @@
 language: python
 matrix:
   include:
-    - name: "Python 3.7 on Xenial Linux"
+    - name: "Python 3.7 on Bionic Linux"
       python: 3.7
-      dist: xenial
+      dist: bionic
       env:
         - PIP_CMD=pip3
         - PYTHON=python3
@@ -17,15 +17,9 @@ matrix:
       env:
         - PIP_CMD=pip3
         - PYTHON=python3
-    - name: "Python 3.6 on Xenial Linux"
+    - name: "Python 3.6 on Bionic Linux"
       python: 3.6
-      dist: xenial
-      env:
-        - PIP_CMD=pip3
-        - PYTHON=python3
-    - name: "Python 3.5 on Xenial Linux"
-      python: 3.5
-      dist: xenial
+      dist: bionic
       env:
         - PIP_CMD=pip3
         - PYTHON=python3
