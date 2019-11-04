@@ -35,6 +35,7 @@ def test_keras_train_complete_flow(generated_filesystem_loader):
     }
 
     with NamedTemporaryFile(delete=False) as named_temporary_file:
+        named_tmp = named_temporary_file.name
         os.remove(named_temporary_file.name)
         keras_model = KerasPredictor(
             name='test_keras_trainer',
@@ -58,11 +59,18 @@ def test_keras_train_complete_flow(generated_filesystem_loader):
                                      mapping=mapping)
 
         dataset_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
-        print("Training on %d datasets" % len(dataset_loader))
-        print("Using %d datasets for validation" % len(validation_loader))
+        dataset_loader_old = dataset_loader
+        validation_loader_old = validation_loader
 
-        trainer.train_scenes(dataset_loader, validation_scenes=validation_loader)
-        trainer.save()
+        try:
+            print("Training on %d datasets" % len(dataset_loader))
+            print("Using %d datasets for validation" % len(validation_loader))
 
-        assert os.path.exists(named_temporary_file.name)
-        assert os.path.getsize(named_temporary_file.name) > 0
+            trainer.train_scenes(dataset_loader, validation_scenes=validation_loader)
+            trainer.save()
+
+            assert os.path.exists(named_tmp.name)
+            assert os.path.getsize(named_tmp.name) > 0
+        finally:
+            dataset_loader = dataset_loader_old
+            validation_loader = validation_loader_old
