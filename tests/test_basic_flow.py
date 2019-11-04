@@ -62,3 +62,7 @@ def test_keras_train_complete_flow(generated_filesystem_loader):
         print("Using %d datasets for validation" % len(validation_loader))
 
         trainer.train_scenes(dataset_loader, validation_scenes=validation_loader)
+        trainer.save()
+
+        assert os.path.exists(named_temporary_file.name)
+        assert os.path.getsize(named_temporary_file.name) > 0
