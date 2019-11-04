@@ -87,7 +87,7 @@ def generate_filesystem_loader(width=2131, height=1979, size=35, num_images=10):
         'type_format': "{SECOND}",
         'id_format': "{name}-{THIRD}",
         'input_source': tempdir.name,
-        'validation_percent': 0.4
+        'validation_percent': 0.2
     }
 
     loader = FileSystemLoader(**base_kwargs)

@@ -113,8 +113,8 @@ class TestFileSystemLoader(object):
 class TestDatasetGenerator(object):
     def test_loader_loops(self, generated_filesystem_loader):
         training_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
-        assert len(training_loader) == 6
-        assert len(validation_loader) == 4
+        assert len(training_loader) == 8
+        assert len(validation_loader) == 2
 
         def _loop_data():
             for i in range(0, len(training_loader) + 10):
@@ -222,7 +222,7 @@ class TestDataGenerator(object):
                                    output_mapping={})
 
 
-        assert len(train_data) == 432
+        assert len(train_data) == 576
 
 
     # def test_image_reassembly(self, generated_filesystem_loader):
