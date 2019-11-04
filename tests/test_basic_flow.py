@@ -41,7 +41,7 @@ def test_keras_train_complete_flow(generated_filesystem_loader):
             name='test_keras_trainer',
             model_path=named_temporary_file.name,
             model_builder="hugin.models.unet.unetv14:unet_v14",
-             batch_size=50,
+             batch_size=10,
              epochs=1,
              metrics=[
                  "accuracy"
