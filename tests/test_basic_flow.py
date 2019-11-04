@@ -63,6 +63,8 @@ def test_keras_train_complete_flow(generated_filesystem_loader):
         loop_validation_loader_old = validation_loader.loop
 
         try:
+            dataset_loader.loop = True
+            loop_validation_loader_old.loop = True
             print("Training on %d datasets" % len(dataset_loader))
             print("Using %d datasets for validation" % len(validation_loader))
 
