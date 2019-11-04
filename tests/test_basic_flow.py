@@ -59,8 +59,8 @@ def test_keras_train_complete_flow(generated_filesystem_loader):
                                      mapping=mapping)
 
         dataset_loader, validation_loader = generated_filesystem_loader.get_dataset_loaders()
-        dataset_loader_old = dataset_loader
-        validation_loader_old = validation_loader
+        loop_dataset_loader_old = dataset_loader.loop
+        loop_validation_loader_old = validation_loader.loop
 
         try:
             print("Training on %d datasets" % len(dataset_loader))
@@ -72,5 +72,5 @@ def test_keras_train_complete_flow(generated_filesystem_loader):
             assert os.path.exists(named_tmp.name)
             assert os.path.getsize(named_tmp.name) > 0
         finally:
-            dataset_loader = dataset_loader_old
-            validation_loader = validation_loader_old
+            dataset_loader.loop = loop_dataset_loader_old
+            validation_loader.loop = loop_validation_loader_old
