@@ -14,7 +14,7 @@ def small_generated_filesystem_loader():
     return generate_filesystem_loader(num_images=4, width=500, height=510)
 
 #@pytest.mark.skipif(not runningInCI(), reason="Skipping running locally as it might be too slow")
-def test_keras_train_complete_flow(generated_filesystem_loader, small_generated_filesystem_loader):
+def test_identity_train_complete_flow(generated_filesystem_loader, small_generated_filesystem_loader):
     mapping = {
         'inputs': {
             'input_1': {
