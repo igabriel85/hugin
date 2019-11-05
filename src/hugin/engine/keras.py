@@ -4,7 +4,7 @@ from logging import getLogger
 from keras.callbacks import ModelCheckpoint
 from keras.utils import multi_gpu_model
 
-from hugin.infer.core import RasterModel
+from hugin.engine.core import RasterModel
 from hugin.tools.callbacks import CSVLogger
 from hugin.tools.utils import import_model_builder
 
@@ -39,7 +39,6 @@ class KerasModel(RasterModel):
                  validation_steps_per_epoch=None,
                  load_only_weights=False,
                  metrics=None,
-                 input_shape=None,
                  custom_objects={},
                  **kwargs):
         RasterModel.__init__(self, *args, **kwargs)

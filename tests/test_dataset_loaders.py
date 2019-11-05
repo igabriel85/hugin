@@ -1,18 +1,10 @@
 import os
-
 import glob
-
-import random
 import pytest
-import numpy as np
-from PIL import Image,ImageDraw
+
 from rasterio.io import DatasetReader
-
 from hugin.io import FileLoader, FileSystemLoader, DataGenerator
-import rasterio
-from rasterio.transform import from_origin
-
-from tempfile import TemporaryDirectory, NamedTemporaryFile
+from tempfile import NamedTemporaryFile
 
 from tests import runningInCI
 

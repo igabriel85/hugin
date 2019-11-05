@@ -3,8 +3,8 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 
-from hugin.infer.core import IdentityModel
-from hugin.infer.scene import RasterSceneTrainer
+from hugin.engine.core import IdentityModel
+from hugin.engine.scene import RasterSceneTrainer
 from hugin.io.loader import BinaryCategoricalConverter
 from tests.conftest import generate_filesystem_loader
 

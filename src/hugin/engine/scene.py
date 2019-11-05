@@ -9,7 +9,7 @@ import rasterio
 from logging import getLogger
 from tempfile import TemporaryFile, NamedTemporaryFile
 
-from hugin.infer.core import metric_processor
+from hugin.engine.core import metric_processor
 from hugin.io.loader import CategoricalConverter as TrainingCategoricalConverter
 from .core import NullMerger, postprocessor
 from ..io import DataGenerator, DatasetGenerator
